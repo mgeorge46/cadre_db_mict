@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Inquiries{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-question-circle me-2 text-primary"></i>Inquiries</h1>
+    </div>
+    <a href="{% url 'inquiries:create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Submit Inquiry</a>
+</div>
+
+{% if is_admin %}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3"><input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search title, reference..."></div>
+            <div class="col-md-2"><select name="status" class="form-select"><option value="">All Status</option>{% for val,label in status_choices %}<option value="{{ val }}" {% if current_status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><select name="priority" class="form-select"><option value="">All Priority</option>{% for val,label in priority_choices %}<option value="{{ val }}" {% if current_priority == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="col-md-1">
+                <select name="per_page" class="form-select no-select2">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-auto"><button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button></div>
+            <div class="col-auto"><a href="{% url 'inquiries:list' %}" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0 small">Showing {{ page_obj.start_index }}--{{ page_obj.end_index }} of {{ page_obj.paginator.count }} inquiries</p>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr>
+                <th>Reference</th><th>Title</th>
+                {% if is_admin %}<th>Submitted By</th>{% endif %}
+                <th>Priority</th><th>Status</th><th>Assigned</th><th>Date</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+                {% for inq in page_obj %}
+                <tr>
+                    <td><a href="{% url 'inquiries:detail' inq.pk %}" class="text-primary fw-semibold">{{ inq.reference_number }}</a></td>
+                    <td class="small">{{ inq.title|truncatechars:50 }}</td>
+                    {% if is_admin %}<td class="small">{{ inq.submitted_by.user.get_full_name }}</td>{% endif %}
+                    <td><span class="badge bg-{{ inq.priority_badge_class }}">{{ inq.get_priority_display }}</span></td>
+                    <td><span class="badge status-{{ inq.status }}">{{ inq.get_status_display }}</span></td>
+                    <td class="small">{{ inq.assigned_to.get_full_name|default:"Unassigned" }}</td>
+                    <td class="small">{{ inq.created_at|date:"M d, Y" }}</td>
+                    <td><a href="{% url 'inquiries:detail' inq.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-5 text-muted">No inquiries found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if page_obj.has_other_pages %}
+<nav class="mt-4 d-flex justify-content-center"><ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&status={{ current_status }}&priority={{ current_priority }}&per_page={{ per_page }}">&laquo;</a></li>{% endif %}
+    {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.paginator.num_pages <= 7 or i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+        <li class="page-item {% if i == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ i }}&search={{ search }}&status={{ current_status }}&priority={{ current_priority }}&per_page={{ per_page }}">{{ i }}</a></li>
+        {% elif i == page_obj.number|add:"-3" or i == page_obj.number|add:"3" %}
+        <li class="page-item disabled"><span class="page-link">...</span></li>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&status={{ current_status }}&priority={{ current_priority }}&per_page={{ per_page }}">&raquo;</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

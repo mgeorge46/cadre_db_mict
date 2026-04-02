@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Edit Bio Data{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-edit me-2 text-warning"></i>Edit Bio Data</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'employees:detail' emp.pk %}">{{ emp.user.get_full_name }}</a></li>
+        <li class="breadcrumb-item active">Edit Bio</li>
+    </ol></nav>
+</div>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="row g-4">
+        <!-- Personal Info -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h6 class="fw-bold mb-0"><i class="fas fa-user me-2 text-primary"></i>Personal Information</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">{{ form.title.label_tag }}{{ form.title }}</div>
+                        <div class="col-md-2">{{ form.gender.label_tag }}{{ form.gender }}</div>
+                        <div class="col-md-3">{{ form.date_of_birth.label_tag }}{{ form.date_of_birth }}</div>
+                        <div class="col-md-3">{{ form.nationality.label_tag }}{{ form.nationality }}</div>
+                        <div class="col-md-2">{{ form.marital_status.label_tag }}{{ form.marital_status }}</div>
+                        <div class="col-md-3">{{ form.national_id.label_tag }}{{ form.national_id }}</div>
+                        <div class="col-md-3">{{ form.passport_number.label_tag }}{{ form.passport_number }}</div>
+                        <div class="col-md-3">{{ form.tin_number.label_tag }}{{ form.tin_number }}</div>
+                        <div class="col-md-3">{{ form.nssf_number.label_tag }}{{ form.nssf_number }}</div>
+                        <div class="col-md-3">{{ form.phone_primary.label_tag }}{{ form.phone_primary }}</div>
+                        <div class="col-md-3">{{ form.phone_secondary.label_tag }}{{ form.phone_secondary }}</div>
+                        <div class="col-md-3">{{ form.personal_email.label_tag }}{{ form.personal_email }}</div>
+                        <div class="col-md-3">{{ form.blood_type.label_tag }}{{ form.blood_type }}</div>
+                        <div class="col-md-3">{{ form.religion.label_tag }}{{ form.religion }}</div>
+                        <div class="col-md-3">{{ form.district_of_origin.label_tag }}{{ form.district_of_origin }}</div>
+                        <div class="col-md-3">{{ form.district_of_residence.label_tag }}{{ form.district_of_residence }}</div>
+                        <div class="col-12">{{ form.physical_address.label_tag }}{{ form.physical_address }}</div>
+                        <div class="col-md-3">
+                            <label class="form-label">Profile Photo</label>
+                            {{ form.profile_photo }}
+                            {% if emp.profile_photo %}<div class="mt-2"><img src="{{ emp.profile_photo.url }}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;"></div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Has Disability?</label>
+                            <div class="form-check">{{ form.has_disability }} <label class="form-check-label" for="{{ form.has_disability.id_for_label }}">Yes</label></div>
+                        </div>
+                        <div class="col-md-6">{{ form.disability_description.label_tag }}{{ form.disability_description }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Next of Kin -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h6 class="fw-bold mb-0"><i class="fas fa-users me-2 text-secondary"></i>Next of Kin</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">{{ form.next_of_kin_name.label_tag }}{{ form.next_of_kin_name }}</div>
+                        <div class="col-6">{{ form.next_of_kin_relationship.label_tag }}{{ form.next_of_kin_relationship }}</div>
+                        <div class="col-6">{{ form.next_of_kin_phone.label_tag }}{{ form.next_of_kin_phone }}</div>
+                        <div class="col-12">{{ form.next_of_kin_email.label_tag }}{{ form.next_of_kin_email }}</div>
+                        <div class="col-12">{{ form.next_of_kin_address.label_tag }}{{ form.next_of_kin_address }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Emergency Contact -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h6 class="fw-bold mb-0"><i class="fas fa-phone-alt me-2 text-danger"></i>Emergency Contact</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">{{ form.emergency_contact_name.label_tag }}{{ form.emergency_contact_name }}</div>
+                        <div class="col-6">{{ form.emergency_contact_phone.label_tag }}{{ form.emergency_contact_phone }}</div>
+                        <div class="col-6">{{ form.emergency_contact_relationship.label_tag }}{{ form.emergency_contact_relationship }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Bio Data</button>
+        <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

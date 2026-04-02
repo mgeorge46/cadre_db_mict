@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ entity_plural }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-building me-2 text-primary"></i>{{ entity_plural }}</h1>
+        {% if breadcrumbs %}
+        <nav><ol class="breadcrumb">{% for label, url in breadcrumbs %}<li class="breadcrumb-item {% if not url %}active{% endif %}">{% if url %}<a href="{% url url %}">{{ label }}</a>{% else %}{{ label }}{% endif %}</li>{% endfor %}</ol></nav>
+        {% endif %}
+    </div>
+    <a href="{% url create_url %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add {{ entity_type }}</a>
+</div>
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>#</th><th>Name</th><th>Code</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ item.name }}</strong>{% if item.description %}<div class="text-muted small">{{ item.description|truncatechars:60 }}</div>{% endif %}</td>
+                    <td><code>{{ item.code }}</code></td>
+                    <td class="small">{{ item.email|default:"—" }}</td>
+                    <td class="small">{{ item.phone|default:"—" }}</td>
+                    <td>{% if item.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                    <td>
+                        <a href="{% url edit_url item.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="{% url delete_url item.pk %}" style="display:inline;">
+                            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete {{ entity_type }}: {{ item.name }}?')"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-4 text-muted">No {{ entity_plural|lower }} found. <a href="{% url create_url %}">Add one</a>.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

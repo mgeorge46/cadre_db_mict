@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Edit Work Information{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-briefcase me-2 text-warning"></i>Edit Work Information</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'employees:detail' emp.pk %}">{{ emp.user.get_full_name }}</a></li>
+        <li class="breadcrumb-item active">Edit Work Info</li>
+    </ol></nav>
+</div>
+<form method="post" id="workForm">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header"><h6 class="fw-bold mb-0"><i class="fas fa-briefcase me-2 text-primary"></i>Work Information</h6></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">{{ form.employee_number.label_tag }}{{ form.employee_number }}</div>
+                <div class="col-md-3">{{ form.employee_type.label_tag }}{{ form.employee_type }}</div>
+                <div class="col-md-3">{{ form.date_joined_ministry.label_tag }}{{ form.date_joined_ministry }}</div>
+                <div class="col-md-3">{{ form.date_joined_position.label_tag }}{{ form.date_joined_position }}</div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Entity Type</label>
+                    {{ form.entity_type }}
+                </div>
+                <div class="col-md-3" id="ministry-group">
+                    <label class="form-label">Ministry</label>{{ form.ministry }}
+                </div>
+                <div class="col-md-3" id="agency-group" style="display:none;">
+                    <label class="form-label">Agency</label>{{ form.agency }}
+                </div>
+                <div class="col-md-3" id="dept-group" style="display:none;">
+                    <label class="form-label">Government Department</label>{{ form.government_department }}
+                </div>
+                <div class="col-md-3" id="district-group" style="display:none;">
+                    <label class="form-label">District</label>{{ form.district }}
+                </div>
+
+                <div class="col-md-3">{{ form.cadre_category.label_tag }}{{ form.cadre_category }}</div>
+                <div class="col-md-3">{{ form.position.label_tag }}{{ form.position }}</div>
+                <div class="col-md-3">{{ form.job_rank.label_tag }}{{ form.job_rank }}</div>
+                <div class="col-md-3">{{ form.reporting_to.label_tag }}{{ form.reporting_to }}</div>
+
+                <div class="col-md-6">{{ form.work_location.label_tag }}{{ form.work_location }}</div>
+                <div class="col-md-3" id="contract-end-group">
+                    {{ form.contract_end_date.label_tag }}{{ form.contract_end_date }}
+                    <div class="form-text text-muted">Only for contract employees</div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Roles</label>
+                    {{ form.roles }}
+                    <div class="form-text">Hold Ctrl/Cmd to select multiple roles</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Work Info</button>
+        <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const entityTypeSelect = document.querySelector('[name="entity_type"]');
+const groups = {
+    'ministry': 'ministry-group',
+    'agency': 'agency-group',
+    'department': 'dept-group',
+    'local_govt': 'district-group',
+};
+
+function showEntityGroup(val) {
+    Object.values(groups).forEach(id => document.getElementById(id).style.display = 'none');
+    if (groups[val]) document.getElementById(groups[val]).style.display = '';
+}
+
+entityTypeSelect.addEventListener('change', e => showEntityGroup(e.target.value));
+showEntityGroup(entityTypeSelect.value);
+</script>
+{% endblock %}

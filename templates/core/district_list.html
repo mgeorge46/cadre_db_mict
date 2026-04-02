@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Districts{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Districts / Local Government</h1>
+    </div>
+    <a href="{% url 'core:district_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add District</a>
+</div>
+
+{% regroup items by region as region_list %}
+{% for region in region_list %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-map me-2 text-primary"></i>{{ region.grouper }} Region</h6>
+        <span class="badge bg-primary">{{ region.list|length }} districts</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    {% for d in region.list %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ d.name }}</strong></td>
+                        <td>{% if d.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                        <td>
+                            <a href="{% url 'core:district_edit' d.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                            <form method="post" action="{% url 'core:district_delete' d.pk %}" style="display:inline;">
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="empty-state card py-5"><i class="fas fa-map"></i><h5>No districts loaded</h5><p><a href="#">Run management command: python manage.py load_districts</a></p></div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IT Cadre Tracking Database{% endblock %} | MoICT Uganda</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    {% block extra_css %}{% endblock %}
+    <style>
+        :root {
+            --primary: #1B4F8A;
+            --primary-dark: #163d6b;
+            --primary-light: #2563aa;
+            --secondary: #00897B;
+            --secondary-dark: #00695C;
+            --accent: #F39C12;
+            --sidebar-bg: #1a2940;
+            --sidebar-hover: #2d4a6f;
+            --sidebar-active: #1B4F8A;
+            --sidebar-text: #ecf0f1;
+            --sidebar-icon: #94a3b8;
+            --body-bg: #f5f7fa;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 70px;
+            --topbar-height: 64px;
+            --transition: all 0.3s ease;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--body-bg);
+            color: #2d3748;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* =================== SIDEBAR =================== */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            min-height: var(--topbar-height);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            text-decoration: none;
+            overflow: hidden;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #e67e22);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px; color: white; font-weight: 700;
+        }
+
+        .brand-text {
+            margin-left: 12px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .sidebar.collapsed .brand-text { opacity: 0; width: 0; }
+
+        .brand-title {
+            color: #fff; font-size: 13px; font-weight: 700;
+            line-height: 1.2; white-space: nowrap;
+        }
+
+        .brand-subtitle {
+            color: var(--sidebar-icon); font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .sidebar-nav {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding: 12px 0;
+        }
+
+        .sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .nav-section-title {
+            padding: 12px 20px 6px;
+            font-size: 10px; font-weight: 600;
+            color: var(--sidebar-icon);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            white-space: nowrap; overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .sidebar.collapsed .nav-section-title { opacity: 0; }
+
+        .nav-item { position: relative; }
+
+        .nav-link {
+            display: flex; align-items: center;
+            padding: 10px 20px; color: var(--sidebar-text);
+            text-decoration: none; border-radius: 0;
+            transition: var(--transition);
+            white-space: nowrap; overflow: hidden;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: var(--sidebar-hover);
+            color: #fff; border-left-color: var(--accent);
+        }
+
+        .nav-link.active {
+            background: var(--sidebar-active);
+            color: #fff; border-left-color: var(--accent);
+        }
+
+        .nav-icon {
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 15px;
+            color: var(--sidebar-icon);
+        }
+
+        .nav-link:hover .nav-icon,
+        .nav-link.active .nav-icon { color: #fff; }
+
+        .nav-label {
+            margin-left: 10px; font-size: 13.5px; font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .sidebar.collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
+
+        .nav-arrow {
+            margin-left: auto; font-size: 11px; transition: var(--transition);
+        }
+
+        .nav-arrow.rotated { transform: rotate(90deg); }
+        .sidebar.collapsed .nav-arrow { display: none; }
+
+        /* Submenu */
+        .submenu {
+            background: rgba(0,0,0,0.2);
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .submenu.open { max-height: 500px; overflow: visible; }
+
+        .submenu .nav-link {
+            padding: 8px 20px 8px 50px; font-size: 13px;
+        }
+
+        .sidebar.collapsed .submenu { display: none; max-height: 0; }
+
+        /* Tooltip for collapsed */
+        .sidebar.collapsed .nav-link {
+            justify-content: center; padding: 10px;
+        }
+
+        .sidebar.collapsed .nav-link .nav-icon { margin: 0; }
+
+        /* =================== TOPBAR =================== */
+        .topbar {
+            position: fixed;
+            top: 0; left: var(--sidebar-width);
+            right: 0; height: var(--topbar-height);
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center;
+            padding: 0 20px; gap: 16px;
+            z-index: 999;
+            transition: left var(--transition);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .sidebar.collapsed ~ .topbar { left: var(--sidebar-collapsed-width); }
+
+        .toggle-btn {
+            background: none; border: none;
+            padding: 8px; border-radius: 8px;
+            cursor: pointer; color: #64748b;
+            font-size: 18px; transition: var(--transition);
+        }
+
+        .toggle-btn:hover { background: #f1f5f9; color: var(--primary); }
+
+        .search-bar {
+            flex: 1; max-width: 400px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%; padding: 8px 16px 8px 40px;
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            font-size: 13.5px; background: #f8fafc;
+            transition: var(--transition);
+        }
+
+        .search-bar input:focus {
+            outline: none; border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(27,79,138,0.1);
+        }
+
+        .search-bar .search-icon {
+            position: absolute; left: 12px; top: 50%;
+            transform: translateY(-50%); color: #94a3b8; font-size: 14px;
+        }
+
+        .topbar-right {
+            margin-left: auto; display: flex; align-items: center; gap: 8px;
+        }
+
+        .topbar-icon-btn {
+            position: relative; background: none; border: none;
+            padding: 8px; border-radius: 8px; cursor: pointer;
+            color: #64748b; font-size: 16px; transition: var(--transition);
+        }
+
+        .topbar-icon-btn:hover { background: #f1f5f9; color: var(--primary); }
+
+        .notification-badge {
+            position: absolute; top: 4px; right: 4px;
+            background: #ef4444; color: white;
+            font-size: 9px; font-weight: 700;
+            width: 16px; height: 16px;
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+        }
+
+        .user-dropdown-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: none; border: 1px solid #e5e7eb;
+            padding: 6px 12px; border-radius: 10px;
+            cursor: pointer; transition: var(--transition);
+        }
+
+        .user-dropdown-btn:hover { border-color: var(--primary); background: #f8fafc; }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 13px;
+        }
+
+        .user-name { font-size: 13px; font-weight: 600; color: #374151; }
+        .user-role { font-size: 10px; color: #9ca3af; }
+
+        /* =================== MAIN CONTENT =================== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--topbar-height);
+            padding: 24px;
+            min-height: calc(100vh - var(--topbar-height));
+            transition: margin-left var(--transition);
+        }
+
+        .sidebar.collapsed ~ * .main-content { margin-left: var(--sidebar-collapsed-width); }
+
+        /* =================== PAGE HEADER =================== */
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 22px; font-weight: 700; color: #1e293b; margin: 0;
+        }
+
+        .breadcrumb {
+            font-size: 13px; padding: 0; background: none; margin: 6px 0 0;
+        }
+
+        .breadcrumb-item a { color: var(--primary); text-decoration: none; }
+        .breadcrumb-item.active { color: #64748b; }
+        .breadcrumb-item + .breadcrumb-item::before { color: #cbd5e1; }
+
+        /* =================== CARDS =================== */
+        .card {
+            border: none; border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            background: white;
+        }
+
+        .card-header {
+            background: white; border-bottom: 1px solid #f1f5f9;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 16px 20px;
+        }
+
+        /* =================== STAT CARDS =================== */
+        .stat-card {
+            background: white; border-radius: 12px;
+            box-shadow: var(--card-shadow); padding: 20px;
+            display: flex; align-items: center; gap: 16px;
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+
+        .stat-icon {
+            width: 52px; height: 52px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+
+        .stat-number { font-size: 28px; font-weight: 700; line-height: 1; }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        /* =================== BUTTONS =================== */
+        .btn-primary {
+            background: var(--primary); border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark); border-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary); border-color: var(--secondary); color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-dark); border-color: var(--secondary-dark); color: white;
+        }
+
+        /* =================== TABLES =================== */
+        .table-card {
+            background: white; border-radius: 12px;
+            box-shadow: var(--card-shadow); overflow: hidden;
+        }
+
+        .table thead th {
+            background: #f8fafc; color: #374151;
+            font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 12px 16px;
+        }
+
+        .table td { padding: 12px 16px; vertical-align: middle; font-size: 13.5px; }
+        .table tbody tr { transition: background 0.15s; }
+        .table tbody tr:hover { background: #f8fafc; }
+
+        /* =================== ALERTS / MESSAGES =================== */
+        .messages-container {
+            position: fixed; top: 80px; right: 20px;
+            z-index: 9999; width: 360px;
+        }
+
+        .alert { border-radius: 10px; border: none; font-size: 13.5px; }
+        .alert-dismissible .btn-close { padding: 14px; }
+
+        /* =================== FORMS =================== */
+        .form-control, .form-select {
+            border-radius: 8px; border: 1.5px solid #e5e7eb;
+            font-size: 13.5px; padding: 8px 12px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27,79,138,0.1);
+        }
+
+        .form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+
+        /* =================== PROFILE COMPLETION =================== */
+        .completion-bar {
+            height: 8px; border-radius: 4px;
+            background: #e5e7eb; overflow: hidden;
+        }
+
+        .completion-fill {
+            height: 100%; border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.6s ease;
+        }
+
+        /* =================== EMPLOYEE CARD =================== */
+        .employee-card {
+            background: white; border-radius: 12px;
+            box-shadow: var(--card-shadow); overflow: hidden;
+            transition: var(--transition); cursor: pointer;
+        }
+
+        .employee-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+
+        .employee-card-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            padding: 20px; text-align: center;
+        }
+
+        .employee-photo {
+            width: 72px; height: 72px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+            object-fit: cover; margin: 0 auto 12px;
+            display: block;
+        }
+
+        .employee-photo-placeholder {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 3px solid rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px; font-size: 26px; color: white; font-weight: 700;
+        }
+
+        .employee-card-body { padding: 16px; }
+        .employee-name { font-size: 14px; font-weight: 700; color: white; margin: 0; }
+        .employee-number { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+        /* =================== BADGES =================== */
+        .badge { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 4px 8px; }
+
+        /* =================== TABS =================== */
+        .nav-tabs { border-bottom: 2px solid #e5e7eb; }
+        .nav-tabs .nav-link { color: #64748b; font-size: 13.5px; font-weight: 500; border: none; padding: 10px 16px; }
+        .nav-tabs .nav-link:hover { color: var(--primary); background: #f8fafc; border-radius: 8px 8px 0 0; }
+        .nav-tabs .nav-link.active { color: var(--primary); font-weight: 700; border-bottom: 2px solid var(--primary); background: none; }
+
+        /* =================== RESPONSIVE =================== */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .topbar { left: 0 !important; }
+            .main-content { margin-left: 0 !important; padding: 16px; }
+        }
+
+        /* =================== MISC =================== */
+        .divider { height: 1px; background: #f1f5f9; margin: 8px 0; }
+        .text-primary { color: var(--primary) !important; }
+        .bg-primary { background-color: var(--primary) !important; }
+        .border-primary { border-color: var(--primary) !important; }
+
+        .section-title {
+            font-size: 13px; font-weight: 600; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .empty-state {
+            text-align: center; padding: 48px 24px; color: #94a3b8;
+        }
+
+        .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state h5 { font-size: 15px; color: #64748b; }
+
+        /* Select2 overrides */
+        .select2-container--bootstrap-5 .select2-selection { border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 13.5px; min-height: 38px; }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered { padding: 4px 8px; color: #2d3748; }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__clear { margin-right: 4px; }
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(27,79,138,0.1); }
+        .select2-container--bootstrap-5 .select2-dropdown { border-radius: 8px; border: 1.5px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .select2-container--bootstrap-5 .select2-results__option--selected { background: #e8f4fd; }
+        .select2-container--bootstrap-5 .select2-results__option--highlighted { background: var(--primary); color: white; }
+
+        /* Inquiry status colors */
+        .status-open { background: #fee2e2; color: #dc2626; }
+        .status-in_progress { background: #dbeafe; color: #2563eb; }
+        .status-pending_info { background: #fef3c7; color: #d97706; }
+        .status-resolved { background: #d1fae5; color: #059669; }
+        .status-closed { background: #f3f4f6; color: #6b7280; }
+
+        .fade-in { animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <a class="sidebar-brand" href="{% url 'dashboard:index' %}">
+            <div class="brand-icon">IC</div>
+            <div class="brand-text">
+                <div class="brand-title">IT Cadre Tracking</div>
+                <div class="brand-subtitle">Ministry of ICT, Uganda</div>
+            </div>
+        </a>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">MAIN</div>
+
+            <div class="nav-item">
+                <a href="{% url 'dashboard:index' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'employees:list' %}" class="nav-link {% if request.resolver_match.app_name == 'employees' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-users"></i></span>
+                    <span class="nav-label">Employees</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title">MODULES</div>
+
+            <div class="nav-item">
+                <a href="{% url 'schemes:list' %}" class="nav-link {% if request.resolver_match.app_name == 'schemes' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-file-contract"></i></span>
+                    <span class="nav-label">Schemes</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'announcements:list' %}" class="nav-link {% if request.resolver_match.app_name == 'announcements' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-bullhorn"></i></span>
+                    <span class="nav-label">Announcements</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'inquiries:list' %}" class="nav-link {% if request.resolver_match.app_name == 'inquiries' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-question-circle"></i></span>
+                    <span class="nav-label">Inquiries</span>
+                </a>
+            </div>
+
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <div class="nav-item">
+                <a href="{% url 'reports:index' %}" class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-chart-bar"></i></span>
+                    <span class="nav-label">Reports</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title">SETTINGS</div>
+
+            <div class="nav-item">
+                <a href="#" class="nav-link submenu-toggle" data-target="settings-menu">
+                    <span class="nav-icon"><i class="fas fa-building"></i></span>
+                    <span class="nav-label">Entities</span>
+                    <span class="nav-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <div class="submenu" id="settings-menu">
+                    <a href="{% url 'core:ministry_list' %}" class="nav-link">
+                        <span class="nav-label">Ministries</span>
+                    </a>
+                    <a href="{% url 'core:agency_list' %}" class="nav-link">
+                        <span class="nav-label">Agencies</span>
+                    </a>
+                    <a href="{% url 'core:department_list' %}" class="nav-link">
+                        <span class="nav-label">Departments</span>
+                    </a>
+                    <a href="{% url 'core:district_list' %}" class="nav-link">
+                        <span class="nav-label">Districts</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-item">
+                <a href="#" class="nav-link submenu-toggle" data-target="cadre-menu">
+                    <span class="nav-icon"><i class="fas fa-layer-group"></i></span>
+                    <span class="nav-label">Cadre Mgmt</span>
+                    <span class="nav-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <div class="submenu" id="cadre-menu">
+                    <a href="{% url 'core:cadre_category_list' %}" class="nav-link">
+                        <span class="nav-label">Categories</span>
+                    </a>
+                    <a href="{% url 'core:position_list' %}" class="nav-link">
+                        <span class="nav-label">Positions</span>
+                    </a>
+                    <a href="{% url 'core:role_list' %}" class="nav-link">
+                        <span class="nav-label">Roles</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'core:job_rank_list' %}" class="nav-link {% if 'job_rank' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-sort-amount-up"></i></span>
+                    <span class="nav-label">Job Ranks</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'core:employee_type_list' %}" class="nav-link {% if 'employee-type' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-id-badge"></i></span>
+                    <span class="nav-label">Emp. Types</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="{% url 'core:settings' %}" class="nav-link {% if 'settings' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-cog"></i></span>
+                    <span class="nav-label">System Settings</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- User info at bottom -->
+        <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="user-avatar" style="width: 34px; height: 34px; font-size: 12px; flex-shrink: 0;">
+                    {{ user.first_name.0 }}{{ user.last_name.0 }}
+                </div>
+                <div class="brand-text" style="overflow: hidden;">
+                    <div style="color: white; font-size: 12px; font-weight: 600; white-space: nowrap;">{{ user.get_full_name }}</div>
+                    <div style="color: var(--sidebar-icon); font-size: 10px;">{{ user.role_label }}</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- TOPBAR -->
+    <header class="topbar" id="topbar">
+        <button class="toggle-btn" id="sidebarToggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <form action="{% url 'dashboard:global_search' %}" method="get" style="margin:0;">
+                <input type="text" name="q" placeholder="Search employees, schemes, inquiries..." value="{{ request.GET.q }}">
+            </form>
+        </div>
+
+        <div class="topbar-right">
+            <div class="dropdown">
+                <button class="topbar-icon-btn dropdown-toggle" data-bs-toggle="dropdown" title="Announcements" style="border: none;">
+                    <i class="fas fa-bell"></i>
+                    {% if notification_count > 0 %}
+                    <span class="notification-badge">{{ notification_count }}</span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 320px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-height: 400px; overflow-y: auto;">
+                    <li>
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700; font-size: 14px;">Announcements</span>
+                            {% if notification_count > 0 %}<span class="badge bg-danger">{{ notification_count }} new</span>{% endif %}
+                        </div>
+                    </li>
+                    {% for ann in recent_notifications %}
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'announcements:detail' ann.pk %}" style="white-space: normal; border-bottom: 1px solid #f9fafb;">
+                            <div style="font-size: 13px; font-weight: 600; color: #1e293b;">{{ ann.title|truncatechars:50 }}</div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">{{ ann.published_at|date:"M d, Y" }}</div>
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li><div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;"><i class="fas fa-check-circle me-1"></i>All caught up!</div></li>
+                    {% endfor %}
+                    <li><hr class="dropdown-divider m-0"></li>
+                    <li><a class="dropdown-item text-center py-2" href="{% url 'announcements:list' %}" style="font-size: 13px; color: var(--primary); font-weight: 600;">View All Announcements</a></li>
+                </ul>
+            </div>
+
+            <div class="dropdown">
+                <button class="user-dropdown-btn dropdown-toggle" data-bs-toggle="dropdown">
+                    <div class="user-avatar">{{ user.first_name.0 }}{{ user.last_name.0 }}</div>
+                    <div>
+                        <div class="user-name">{{ user.first_name }}</div>
+                        <div class="user-role">{{ user.role_label }}</div>
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 8px 24px rgba(0,0,0,0.1);">
+                    <li>
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="font-weight: 700; font-size: 14px;">{{ user.get_full_name }}</div>
+                            <div style="font-size: 12px; color: #64748b;">{{ user.email }}</div>
+                        </div>
+                    </li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                        <i class="fas fa-user me-2 text-primary"></i>My Profile
+                    </a></li>
+                    {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+                    <li><a class="dropdown-item" href="{% url 'accounts:user_list' %}">
+                        <i class="fas fa-users-cog me-2 text-primary"></i>User Management
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'core:settings' %}">
+                        <i class="fas fa-cog me-2 text-primary"></i>Settings
+                    </a></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}">
+                        <i class="fas fa-key me-2 text-warning"></i>Change Password
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                        <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content fade-in" id="mainContent">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {% if message.tags == 'success' %}<i class="fas fa-check-circle me-2"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="fas fa-exclamation-circle me-2"></i>
+                {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle me-2"></i>
+                {% else %}<i class="fas fa-info-circle me-2"></i>{% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- jQuery (required for Select2) -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/select2.min.js"></script>
+
+    <script>
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const mainContent = document.getElementById('mainContent');
+        const topbar = document.getElementById('topbar');
+
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
+            topbar.style.left = 'var(--sidebar-collapsed-width)';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+            if (isCollapsed) {
+                mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
+                topbar.style.left = 'var(--sidebar-collapsed-width)';
+            } else {
+                mainContent.style.marginLeft = 'var(--sidebar-width)';
+                topbar.style.left = 'var(--sidebar-width)';
+            }
+        });
+
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Custom submenu toggle (independent of Bootstrap collapse)
+        document.querySelectorAll('.submenu-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const submenu = document.getElementById(targetId);
+                if (!submenu) return;
+                const arrow = this.querySelector('.nav-arrow i');
+                const isOpen = submenu.classList.contains('open');
+                // Close all other submenus
+                document.querySelectorAll('.submenu.open').forEach(s => {
+                    s.classList.remove('open');
+                    const t = document.querySelector(`[data-target="${s.id}"] .nav-arrow i`);
+                    if (t) t.style.transform = '';
+                });
+                document.querySelectorAll('.submenu-toggle').forEach(t => t.classList.remove('active'));
+                if (!isOpen) {
+                    submenu.classList.add('open');
+                    this.classList.add('active');
+                    if (arrow) arrow.style.transform = 'rotate(90deg)';
+                }
+            });
+        });
+
+        // Auto-open submenu if a child link matches current path
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.submenu .nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && currentPath.startsWith(href)) {
+                link.classList.add('active');
+                const submenu = link.closest('.submenu');
+                if (submenu) {
+                    submenu.classList.add('open');
+                    const toggleBtn = document.querySelector(`[data-target="${submenu.id}"]`);
+                    if (toggleBtn) {
+                        toggleBtn.classList.add('active');
+                        const arrow = toggleBtn.querySelector('.nav-arrow i');
+                        if (arrow) arrow.style.transform = 'rotate(90deg)';
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        // Initialize Select2 on all select elements
+        $(document).ready(function() {
+            $('select.form-select, select.form-control').each(function() {
+                if (!$(this).hasClass('no-select2') && !$(this).data('select2')) {
+                    $(this).select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: $(this).find('option:first').text() || 'Select...',
+                    });
+                }
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-exchange-alt me-2 text-primary"></i>{{ page_title }}</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'employees:detail' emp.pk %}">{{ emp.user.get_full_name }}</a></li>
+            <li class="breadcrumb-item active">{{ page_title }}</li>
+        </ol>
+    </nav>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Transfer Type <span class="text-danger">*</span></label>
+                            {{ form.transfer_type }}
+                            {% if form.transfer_type.errors %}<div class="text-danger small">{{ form.transfer_type.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            {{ form.status }}
+                            {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Reference Number</label>
+                            {{ form.reference_number }}
+                        </div>
+
+                        <!-- FROM Section (Read-only) -->
+                        <div class="col-12"><hr class="my-1"><small class="text-muted fw-semibold"><i class="fas fa-sign-out-alt me-1"></i>FROM (Current Position - Read Only)</small></div>
+                        <div class="col-md-3">
+                            <label class="form-label">Entity Type</label>
+                            <input type="text" class="form-control" value="{{ form.from_entity_type.value|default:'' }}" readonly style="background:#f1f5f9;" tabindex="-1">
+                            <input type="hidden" name="from_entity_type" value="{{ form.from_entity_type.value|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Entity Name</label>
+                            {{ form.from_entity_name }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Position</label>
+                            {{ form.from_position }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Cadre Category</label>
+                            {{ form.from_cadre_category }}
+                        </div>
+
+                        <!-- TO Section -->
+                        <div class="col-12"><hr class="my-1"><small class="text-muted fw-semibold"><i class="fas fa-sign-in-alt me-1"></i>TO (New Assignment)</small></div>
+                        <div class="col-md-3">
+                            <label class="form-label">Entity Type <span class="text-danger">*</span></label>
+                            {{ form.to_entity_type }}
+                            {% if form.to_entity_type.errors %}<div class="text-danger small">{{ form.to_entity_type.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Entity Name <span class="text-danger">*</span></label>
+                            {{ form.to_entity_name }}
+                            {% if form.to_entity_name.errors %}<div class="text-danger small">{{ form.to_entity_name.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Position</label>
+                            {{ form.to_position }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Cadre Category</label>
+                            {{ form.to_cadre_category }}
+                        </div>
+
+                        <!-- Dates -->
+                        <div class="col-12"><hr class="my-1"><small class="text-muted fw-semibold"><i class="fas fa-calendar me-1"></i>DATES & DETAILS</small></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Effective Date <span class="text-danger">*</span></label>
+                            {{ form.effective_date }}
+                            {% if form.effective_date.errors %}<div class="text-danger small">{{ form.effective_date.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date <span class="text-muted small">(leave blank if ongoing)</span></label>
+                            {{ form.end_date }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Reason</label>
+                            {{ form.reason }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">{{ form.non_field_errors|join:", " }}</div>
+                    {% endif %}
+
+                    {% if obj and obj.status_changed_by %}
+                    <div class="alert alert-info mt-3 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Status last changed by <strong>{{ obj.status_changed_by.get_full_name }}</strong>
+                        on {{ obj.status_changed_at|date:"M d, Y H:i" }}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                        <a href="{% url 'employees:detail' emp.pk %}?tab=deployments" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load entity names based on entity type for TO section
+$(document).ready(function(){
+    const toEntityType = $('[name="to_entity_type"]');
+    const toEntityName = $('[name="to_entity_name"]');
+
+    function loadEntities(entityType, target, selectedVal) {
+        if (!entityType) { target.empty().append('<option value="">-- Select Entity --</option>'); return; }
+        $.getJSON('{% url "core:ajax_entities" %}', {entity_type: entityType}, function(data) {
+            target.empty().append('<option value="">-- Select Entity --</option>');
+            data.entities.forEach(function(e) {
+                const sel = (e.name === selectedVal) ? ' selected' : '';
+                target.append('<option value="' + e.name + '"' + sel + '>' + e.name + '</option>');
+            });
+            target.trigger('change.select2');
+        });
+    }
+
+    toEntityType.on('change', function() {
+        loadEntities($(this).val(), toEntityName, '');
+    });
+
+    // Pre-load if editing
+    const initialToType = toEntityType.val();
+    const initialToName = '{{ form.to_entity_name.value|default:"" }}';
+    if (initialToType) {
+        loadEntities(initialToType, toEntityName, initialToName);
+    }
+});
+</script>
+{% endblock %}

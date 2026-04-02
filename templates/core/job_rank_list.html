@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div><h1 class="page-title"><i class="fas fa-sort-amount-up me-2 text-primary"></i>{{ page_title }}</h1></div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'core:job_rank_list' %}?export=csv{% if search %}&search={{ search }}{% endif %}{% if cat_filter %}&category={{ cat_filter }}{% endif %}" class="btn btn-outline-success btn-sm"><i class="fas fa-file-csv me-1"></i>Export CSV</a>
+        <a href="{% url 'core:job_rank_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Job Rank</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small mb-1">Search</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search name or code..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.pk }}" {% if cat_filter|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Per Page</label>
+                <select name="per_page" class="form-select form-select-sm no-select2">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter me-1"></i>Apply</button>
+                <a href="{% url 'core:job_rank_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-times me-1"></i>Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results info -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <small class="text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} job ranks</small>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:50px">#</th>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th>Category</th>
+                        <th>Entity Type</th>
+                        <th class="text-center">Level</th>
+                        <th class="text-center">Status</th>
+                        <th style="width:120px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td><strong>{{ item.name }}</strong></td>
+                        <td><code>{{ item.code }}</code></td>
+                        <td class="small">{{ item.cadre_category.name|default:"All" }}</td>
+                        <td><span class="badge" style="background:#e8f4fd;color:#1B4F8A;">{{ item.get_entity_type_display }}</span></td>
+                        <td class="text-center"><span class="badge bg-secondary">{{ item.level }}</span></td>
+                        <td class="text-center">{% if item.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                        <td>
+                            <a href="{% url 'core:job_rank_edit' item.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                            <form method="post" action="{% url 'core:job_rank_delete' item.pk %}" style="display:inline;">
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No job ranks found. <a href="{% url 'core:job_rank_create' %}">Add one</a>.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-3 d-flex justify-content-center">
+    <ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&category={{ cat_filter }}&per_page={{ per_page }}">&laquo;</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&search={{ search }}&category={{ cat_filter }}&per_page={{ per_page }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&category={{ cat_filter }}&per_page={{ per_page }}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

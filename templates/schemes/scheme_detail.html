@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}{{ scheme.title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1 class="page-title">{{ scheme.title }}</h1>
+        <nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'schemes:list' %}">Schemes</a></li><li class="breadcrumb-item active">{{ scheme.title|truncatechars:40 }}</li></ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+        <a href="{% url 'schemes:edit' scheme.pk %}" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex gap-2 align-items-center">
+                <code>{{ scheme.reference_number }}</code>
+                {% if scheme.is_published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-warning text-dark">Draft</span>{% endif %}
+                {% if scheme.requires_signature %}<span class="badge bg-primary">Requires Signature</span>{% endif %}
+            </div>
+            <div class="card-body">
+                <div style="line-height:1.8;white-space:pre-wrap;">{{ scheme.content }}</div>
+                {% if scheme.document %}
+                <hr>
+                <a href="{{ scheme.document.url }}" class="btn btn-outline-success btn-sm" target="_blank"><i class="fas fa-download me-1"></i>Download Document</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sign -->
+        {% if employee and scheme.is_published and scheme.requires_signature %}
+        <div class="card mt-3">
+            <div class="card-body py-3 d-flex align-items-center justify-content-between">
+                {% if has_signed %}
+                <div><i class="fas fa-check-circle text-success me-2"></i><strong>You have signed this scheme.</strong></div>
+                {% else %}
+                <div><i class="fas fa-signature text-primary me-2"></i>Please sign this scheme to acknowledge you have read it.</div>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" name="sign" class="btn btn-primary"><i class="fas fa-pen me-1"></i>Sign Scheme</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Info</h6></div>
+            <div class="card-body">
+                <div class="mb-2"><span class="text-muted small">Created by:</span><br><strong>{{ scheme.created_by.get_full_name }}</strong></div>
+                <div class="mb-2"><span class="text-muted small">Created:</span><br><strong>{{ scheme.created_at|date:"M d, Y H:i" }}</strong></div>
+                {% if scheme.published_at %}<div class="mb-2"><span class="text-muted small">Published:</span><br><strong>{{ scheme.published_at|date:"M d, Y H:i" }}</strong></div>{% endif %}
+                <div class="d-flex gap-3 mt-3">
+                    <div class="text-center"><div style="font-size:24px;font-weight:700;color:#1B4F8A;">{{ scheme.views_count }}</div><div class="text-muted small">Views</div></div>
+                    <div class="text-center"><div style="font-size:24px;font-weight:700;color:#00897B;">{{ scheme.signatures_count }}</div><div class="text-muted small">Signatures</div></div>
+                </div>
+            </div>
+        </div>
+
+        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+        {% if scheme_views %}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Recent Views</h6></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                {% for v in scheme_views|slice:":8" %}
+                <li class="list-group-item small py-2 d-flex justify-content-between">
+                    <span>{{ v.employee.user.get_full_name }}</span>
+                    <span class="text-muted">{{ v.viewed_at|date:"M d" }}</span>
+                </li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if scheme_signatures %}
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Signatures</h6></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                {% for s in scheme_signatures|slice:":8" %}
+                <li class="list-group-item small py-2 d-flex justify-content-between">
+                    <span><i class="fas fa-check-circle text-success me-1"></i>{{ s.employee.user.get_full_name }}</span>
+                    <span class="text-muted">{{ s.signed_at|date:"M d" }}</span>
+                </li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

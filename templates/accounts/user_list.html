@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-users-cog me-2 text-primary"></i>User Management</h1>
+    </div>
+    <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Add User
+    </a>
+</div>
+
+<!-- Search & Per Page -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search name, email, username...">
+            </div>
+            <div class="col-md-2">
+                <select name="per_page" class="form-select no-select2">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20 per page</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50 per page</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100 per page</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="col-md-1">
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary w-100" title="Clear"><i class="fas fa-times"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0 small">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} users</p>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>#</th><th>Full Name</th><th>Email</th><th>Username</th>
+                    <th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td><strong>{{ u.get_full_name }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td><code>{{ u.username }}</code></td>
+                    <td><span class="badge bg-primary">{{ u.role_label }}</span></td>
+                    <td>
+                        {% if u.is_active %}<span class="badge bg-success">Active</span>
+                        {% else %}<span class="badge bg-danger">Inactive</span>{% endif %}
+                    </td>
+                    <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'accounts:user_edit' u.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'accounts:admin_change_password' u.pk %}" class="btn btn-sm btn-outline-warning" title="Change Password">
+                            <i class="fas fa-key"></i>
+                        </a>
+                        {% if u != request.user %}
+                        <form method="post" action="{% url 'accounts:user_delete' u.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete {{ u.get_full_name }}?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-4 text-muted">No users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&per_page={{ per_page }}">&laquo;</a></li>
+        {% endif %}
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.paginator.num_pages <= 7 or i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+            <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                <a class="page-link" href="?page={{ i }}&search={{ search }}&per_page={{ per_page }}">{{ i }}</a>
+            </li>
+            {% elif i == page_obj.number|add:"-3" or i == page_obj.number|add:"3" %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&per_page={{ per_page }}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

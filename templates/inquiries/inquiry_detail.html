@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{{ inquiry.reference_number }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1 class="page-title">{{ inquiry.title }}</h1>
+        <nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'inquiries:list' %}">Inquiries</a></li><li class="breadcrumb-item active">{{ inquiry.reference_number }}</li></ol></nav>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge bg-{{ inquiry.priority_badge_class }} fs-6">{{ inquiry.get_priority_display }}</span>
+        <span class="badge status-{{ inquiry.status }} fs-6">{{ inquiry.get_status_display }}</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <h6 class="mb-0 fw-bold">Description</h6>
+                <code>{{ inquiry.reference_number }}</code>
+            </div>
+            <div class="card-body">
+                <p style="white-space:pre-wrap;line-height:1.7;">{{ inquiry.description }}</p>
+            </div>
+        </div>
+
+        <!-- Responses -->
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Responses ({{ responses|length }})</h6></div>
+            <div class="card-body">
+                {% for resp in responses %}
+                <div class="mb-3 p-3 rounded {% if resp.is_internal %}bg-light border-start border-warning border-3{% else %}bg-light border-start border-primary border-3{% endif %}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong class="small">{{ resp.responded_by.get_full_name }}</strong>
+                        <div>
+                            {% if resp.is_internal %}<span class="badge bg-warning text-dark me-1">Internal Note</span>{% endif %}
+                            <span class="text-muted small">{{ resp.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <p class="mb-0 small" style="white-space:pre-wrap;">{{ resp.message }}</p>
+                </div>
+                {% empty %}
+                <div class="text-muted text-center py-3">No responses yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Add Response -->
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Add Response</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ response_form.message }}
+                    {% if is_admin %}
+                    <div class="form-check mt-2">{{ response_form.is_internal }}<label class="form-check-label ms-2 small">Mark as internal note (not visible to employee)</label></div>
+                    {% endif %}
+                    <button type="submit" name="respond" class="btn btn-primary mt-3"><i class="fas fa-paper-plane me-1"></i>Send Response</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Details</h6></div>
+            <div class="card-body">
+                <div class="mb-2"><span class="text-muted small">Submitted by:</span><br><strong>{{ inquiry.submitted_by.user.get_full_name }}</strong></div>
+                <div class="mb-2"><span class="text-muted small">Submitted:</span><br><strong>{{ inquiry.created_at|date:"M d, Y H:i" }}</strong></div>
+                {% if inquiry.category %}<div class="mb-2"><span class="text-muted small">Category:</span><br><strong>{{ inquiry.category }}</strong></div>{% endif %}
+                {% if inquiry.resolved_at %}<div class="mb-2"><span class="text-muted small">Resolved:</span><br><strong>{{ inquiry.resolved_at|date:"M d, Y" }}</strong></div>{% endif %}
+                {% if inquiry.closed_at %}<div class="mb-2"><span class="text-muted small">Closed:</span><br><strong>{{ inquiry.closed_at|date:"M d, Y" }}</strong></div>{% endif %}
+            </div>
+        </div>
+
+        {% if is_admin %}
+        <!-- Update Status -->
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Update Status</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <select name="status" class="form-select mb-2">
+                        {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if inquiry.status == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" name="update_status" class="btn btn-primary w-100 btn-sm">Update Status</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Assign -->
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Assign To</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <select name="assignee" class="form-select mb-2">
+                        <option value="">-- Unassigned --</option>
+                        {% for admin_u in admin_users %}
+                        <option value="{{ admin_u.pk }}" {% if inquiry.assigned_to == admin_u %}selected{% endif %}>{{ admin_u.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" name="assign" class="btn btn-outline-primary w-100 btn-sm">Assign</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

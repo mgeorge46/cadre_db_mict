@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% block title %}Report Preview{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-sidebar {
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+    .filters-sidebar::-webkit-scrollbar { width: 4px; }
+    .filters-sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .chart-container { position: relative; height: 280px; }
+    @media print {
+        .sidebar, .topbar, .filters-sidebar, .no-print { display: none !important; }
+        .main-content { margin: 0 !important; padding: 10px !important; }
+        .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        .chart-container { height: 200px !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-chart-bar me-2 text-primary"></i>Report Preview</h1>
+        <p class="text-muted small mb-0">{{ total_count }} record{{ total_count|pluralize }} found</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{% url 'reports:index' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back to Filters</a>
+        <a href="{% url 'reports:export_excel' %}?{{ query_string }}" class="btn btn-success btn-sm"><i class="fas fa-file-excel me-1"></i>Export Excel</a>
+        <a href="{% url 'reports:export_pdf' %}?{{ query_string }}" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Export PDF</a>
+        <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="fas fa-print me-1"></i>Print</button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#1B4F8A;">
+            <div class="stat-icon" style="background:#e8f4fd;color:#1B4F8A;"><i class="fas fa-users"></i></div>
+            <div><div class="stat-number">{{ total_count }}</div><div class="stat-label">Total Records</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#00897B;">
+            <div class="stat-icon" style="background:#e0f2f1;color:#00897B;"><i class="fas fa-file-alt"></i></div>
+            <div><div class="stat-number"><h6>{{ report_type|title }}</h6></div><div class="stat-label">Report Type</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#F39C12;">
+            <div class="stat-icon" style="background:#fef3c7;color:#F39C12;"><i class="fas fa-list"></i></div>
+            <div><div class="stat-number">{{ per_page }}</div><div class="stat-label">Per Page</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#8B5CF6;">
+            <div class="stat-icon" style="background:#ede9fe;color:#8B5CF6;"><i class="fas fa-pager"></i></div>
+            <div><div class="stat-number">{{ page_obj.paginator.num_pages }}</div><div class="stat-label">Total Pages</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+{% if total_count > 0 %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-pie me-1"></i>By Cadre Category</h6></div>
+            <div class="card-body p-2">
+                <div class="chart-container"><canvas id="cadreChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-bar me-1"></i>By Entity Type</h6></div>
+            <div class="card-body p-2">
+                <div class="chart-container"><canvas id="entityChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-doughnut me-1"></i>By Gender</h6></div>
+            <div class="card-body p-2">
+                <div class="chart-container"><canvas id="genderChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Per page selector -->
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <p class="text-muted mb-0 small">Showing {{ page_obj.start_index }}--{{ page_obj.end_index }} of {{ total_count }}</p>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        {% for key, val in request.GET.items %}
+            {% if key != 'per_page' and key != 'page' %}
+            <input type="hidden" name="{{ key }}" value="{{ val }}">
+            {% endif %}
+        {% endfor %}
+        <label class="small text-muted">Show:</label>
+        <select name="per_page" class="form-select form-select-sm no-select2" style="width:auto;" onchange="this.form.submit()">
+            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+    </form>
+</div>
+
+<!-- Results Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Emp. No.</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Entity Type</th>
+                        <th>Entity</th>
+                        <th>Cadre Category</th>
+                        <th>Position</th>
+                        <th>Job Rank</th>
+                        <th>Emp. Type</th>
+                        {% if report_type == 'time_in_position' %}
+                        <th>Date Joined Position</th>
+                        <th>Years in Position</th>
+                        {% elif report_type == 'contract_expiry' %}
+                        <th>Contract End</th>
+                        <th>Days Remaining</th>
+                        {% else %}
+                        <th>Date Joined</th>
+                        <th>Profile %</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% load tz %}
+                    {% for emp in page_obj %}
+                    <tr>
+                        <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td><code>{{ emp.employee_number }}</code></td>
+                        <td>
+                            <a href="{% url 'employees:detail' emp.pk %}" class="text-decoration-none fw-semibold">{{ emp.user.get_full_name }}</a>
+                        </td>
+                        <td class="small">{{ emp.user.email }}</td>
+                        <td><span class="badge" style="background:#e8f4fd;color:#1B4F8A;font-size:10px;">{{ emp.get_entity_type_display|default:"--" }}</span></td>
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
+                        <td class="small">{{ emp.employee_type.name|default:"--" }}</td>
+                        {% if report_type == 'time_in_position' %}
+                        <td class="small">{{ emp.date_joined_position|date:"M d, Y"|default:"--" }}</td>
+                        <td class="small">
+                            {% if emp.date_joined_position %}
+                                {{ emp.date_joined_position|timesince }}
+                            {% else %}--{% endif %}
+                        </td>
+                        {% elif report_type == 'contract_expiry' %}
+                        <td class="small">{{ emp.contract_end_date|date:"M d, Y"|default:"--" }}</td>
+                        <td class="small">
+                            {% if emp.contract_end_date %}
+                                <span class="badge {% if emp.contract_end_date < today %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ emp.contract_end_date|timeuntil }}
+                                </span>
+                            {% else %}--{% endif %}
+                        </td>
+                        {% else %}
+                        <td class="small">{{ emp.date_joined_ministry|date:"M d, Y"|default:"--" }}</td>
+                        <td>
+                            <div style="width:70px;">
+                                <div class="completion-bar"><div class="completion-fill" style="width:{{ emp.profile_completion }}%;"></div></div>
+                                <div style="font-size:10px;text-align:right;color:#64748b;">{{ emp.profile_completion }}%</div>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="12" class="text-center py-5 text-muted">
+                        <i class="fas fa-search" style="font-size:32px;opacity:0.3;"></i>
+                        <p class="mt-2">No records match the selected filters.</p>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4 d-flex justify-content-center no-print">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+        {% endif %}
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.paginator.num_pages <= 7 or i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+            <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                <a class="page-link" href="?{{ query_string }}&page={{ i }}">{{ i }}</a>
+            </li>
+            {% elif i == page_obj.number|add:"-3" or i == page_obj.number|add:"3" %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if total_count > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const COLORS = ['#1B4F8A', '#00897B', '#F39C12', '#8B5CF6', '#E74C3C', '#2ECC71', '#3498DB', '#E67E22', '#9B59B6', '#1ABC9C'];
+const cadreData = {{ cadre_dist_json|safe }};
+const entityData = {{ entity_dist_json|safe }};
+const genderData = {{ gender_dist_json|safe }};
+
+// Cadre Category - Doughnut
+if (cadreData.length > 0) {
+    new Chart(document.getElementById('cadreChart'), {
+        type: 'doughnut',
+        data: {
+            labels: cadreData.map(d => d.cadre_category__name),
+            datasets: [{
+                data: cadreData.map(d => d.count),
+                backgroundColor: COLORS.slice(0, cadreData.length),
+                borderWidth: 2, borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+// Entity Type - Bar
+if (entityData.length > 0) {
+    new Chart(document.getElementById('entityChart'), {
+        type: 'bar',
+        data: {
+            labels: entityData.map(d => d.entity_type),
+            datasets: [{
+                label: 'Employees',
+                data: entityData.map(d => d.count),
+                backgroundColor: COLORS.slice(0, entityData.length),
+                borderRadius: 6, barThickness: 30
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { ticks: { font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+// Gender - Pie
+if (genderData.length > 0) {
+    new Chart(document.getElementById('genderChart'), {
+        type: 'pie',
+        data: {
+            labels: genderData.map(d => d.gender),
+            datasets: [{
+                data: genderData.map(d => d.count),
+                backgroundColor: ['#1B4F8A', '#F39C12', '#cbd5e1'],
+                borderWidth: 2, borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

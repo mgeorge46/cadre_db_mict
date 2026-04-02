@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Add Employee{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user-plus me-2 text-primary"></i>Add New Employee</h1>
+    <nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li><li class="breadcrumb-item active">Add Employee</li></ol></nav>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Basic Information</h6></div>
+            <div class="card-body p-4">
+                <div class="alert alert-info small"><i class="fas fa-info-circle me-2"></i>This creates the user account and employee profile. Edit detailed information on the profile page after creation.</div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ field.label }} {% if field.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Create Employee</button>
+                        <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

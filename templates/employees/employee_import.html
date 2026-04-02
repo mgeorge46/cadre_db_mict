@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-file-import me-2 text-primary"></i>{{ page_title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li>
+                <li class="breadcrumb-item active">Import</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>Instructions</h6>
+            </div>
+            <div class="card-body">
+                <ol class="mb-3">
+                    <li>Download the <a href="{% url 'employees:import_template' %}" class="fw-semibold">CSV template</a> to see the required format.</li>
+                    <li>Fill in employee data. Required columns: <code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>employee_number</code>.</li>
+                    <li>Optional columns: <code>title</code>, <code>gender</code>, <code>phone_primary</code>, <code>national_id</code>, <code>date_of_birth</code> (YYYY-MM-DD), <code>entity_type</code> (ministry/agency/department/local_govt), <code>entity_name</code>, <code>cadre_category</code>, <code>position</code>, <code>job_rank</code>, <code>employee_type</code>, <code>date_joined_ministry</code> (YYYY-MM-DD), <code>work_location</code>.</li>
+                    <li>Entity names, cadre categories, positions, job ranks, and employee types must match existing records (case-insensitive).</li>
+                    <li>All imported users get a default password: <code>changeme2024</code>. They should change it on first login.</li>
+                </ol>
+                <a href="{% url 'employees:import_template' %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-download me-1"></i>Download Template</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-upload me-2"></i>Upload CSV File</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label">Select CSV File</label>
+                        <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                        <div class="form-text">Only .csv files are accepted. Maximum recommended: 500 rows per import.</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-file-import me-1"></i>Import Employees</button>
+                        <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

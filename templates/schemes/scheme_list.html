@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Schemes{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-file-contract me-2 text-primary"></i>Schemes</h1>
+        <nav><ol class="breadcrumb"><li class="breadcrumb-item active">Schemes</li></ol></nav>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <select name="per_page" class="form-select form-select-sm no-select2" style="width:auto;" onchange="this.form.submit()">
+                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+        </form>
+        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+        <a href="{% url 'schemes:create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>New Scheme</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0 small">Showing {{ page_obj.start_index }}--{{ page_obj.end_index }} of {{ page_obj.paginator.count }} schemes</p>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>Title</th><th>Reference</th><th>Status</th><th>Requires Sig.</th><th>Views</th><th>Signatures</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for scheme in page_obj %}
+                <tr>
+                    <td><a href="{% url 'schemes:detail' scheme.pk %}" class="text-decoration-none fw-semibold">{{ scheme.title }}</a></td>
+                    <td><code>{{ scheme.reference_number }}</code></td>
+                    <td>{% if scheme.is_published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-warning text-dark">Draft</span>{% endif %}</td>
+                    <td>{% if scheme.requires_signature %}<span class="badge bg-primary">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+                    <td><span class="badge bg-info">{{ scheme.views_count }}</span></td>
+                    <td><span class="badge bg-success">{{ scheme.signatures_count }}</span></td>
+                    <td class="small">{{ scheme.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'schemes:detail' scheme.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+                        <a href="{% url 'schemes:edit' scheme.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="{% url 'schemes:delete' scheme.pk %}" style="display:inline;">
+                            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-5 text-muted">No schemes yet. {% if user.is_admin or user.is_it_admin or user.is_superuser %}<a href="{% url 'schemes:create' %}">Create one</a>.{% endif %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if page_obj.has_other_pages %}
+<nav class="mt-4 d-flex justify-content-center"><ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}">&laquo;</a></li>{% endif %}
+    {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.paginator.num_pages <= 7 or i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+        <li class="page-item {% if i == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ i }}&per_page={{ per_page }}">{{ i }}</a></li>
+        {% elif i == page_obj.number|add:"-3" or i == page_obj.number|add:"3" %}
+        <li class="page-item disabled"><span class="page-link">...</span></li>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}">&raquo;</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

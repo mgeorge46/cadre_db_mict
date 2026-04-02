@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Search Results{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-search me-2 text-primary"></i>Search Results</h1>
+    {% if q %}<p class="text-muted mb-0">Showing results for "<strong>{{ q }}</strong>"</p>{% endif %}
+</div>
+
+{% if not q %}
+<div class="card py-5 text-center">
+    <div class="empty-state">
+        <i class="fas fa-search"></i>
+        <h5>Enter a search term</h5>
+        <p class="text-muted small">Search across employees, inquiries, and schemes.</p>
+    </div>
+</div>
+{% else %}
+
+<!-- Employees Results -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-users me-2 text-primary"></i>Employees <span class="badge bg-primary ms-2">{{ employees|length }}</span></h6>
+        {% if employees %}<a href="{% url 'employees:list' %}?search={{ q }}" class="btn btn-sm btn-outline-primary">View All</a>{% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if employees %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Name</th><th>Emp. No.</th><th>Email</th>
+                        <th>Entity</th><th>Cadre</th><th>Position</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <strong>{{ emp.user.get_full_name }}</strong>
+                        </td>
+                        <td><code>{{ emp.employee_number }}</code></td>
+                        <td class="small">{{ emp.user.email }}</td>
+                        <td>
+                            <span class="badge" style="background:#e8f4fd;color:#1B4F8A;font-size:10px;">{{ emp.get_entity_type_display|default:"--" }}</span>
+                            <div class="small text-muted">{{ emp.get_entity_name }}</div>
+                        </td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td>
+                            <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small"><i class="fas fa-info-circle me-1"></i>No employees match your search.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Inquiries Results -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-question-circle me-2 text-warning"></i>Inquiries <span class="badge bg-warning text-dark ms-2">{{ inquiries|length }}</span></h6>
+        {% if inquiries %}<a href="{% url 'inquiries:list' %}" class="btn btn-sm btn-outline-warning">View All</a>{% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if inquiries %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Reference</th><th>Title</th><th>Submitted By</th>
+                        <th>Status</th><th>Priority</th><th>Date</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inq in inquiries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><code>{{ inq.reference_number }}</code></td>
+                        <td><strong>{{ inq.title|truncatechars:50 }}</strong></td>
+                        <td class="small">{{ inq.submitted_by.user.get_full_name|default:"--" }}</td>
+                        <td><span class="badge bg-{{ inq.status_badge_class }}">{{ inq.get_status_display }}</span></td>
+                        <td><span class="badge bg-{{ inq.priority_badge_class }}">{{ inq.get_priority_display }}</span></td>
+                        <td class="small">{{ inq.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'inquiries:detail' inq.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small"><i class="fas fa-info-circle me-1"></i>No inquiries match your search.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Schemes Results -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-file-contract me-2 text-success"></i>Schemes <span class="badge bg-success ms-2">{{ schemes|length }}</span></h6>
+        {% if schemes %}<a href="{% url 'schemes:list' %}" class="btn btn-sm btn-outline-success">View All</a>{% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if schemes %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Reference</th><th>Title</th>
+                        <th>Published</th><th>Date</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scheme in schemes %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><code>{{ scheme.reference_number }}</code></td>
+                        <td><strong>{{ scheme.title|truncatechars:60 }}</strong></td>
+                        <td>
+                            {% if scheme.is_published %}<span class="badge bg-success">Published</span>
+                            {% else %}<span class="badge bg-secondary">Draft</span>{% endif %}
+                        </td>
+                        <td class="small">{{ scheme.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'schemes:detail' scheme.pk %}" class="btn btn-sm btn-outline-success"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small"><i class="fas fa-info-circle me-1"></i>No schemes match your search.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

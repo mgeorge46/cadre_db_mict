@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-bullhorn me-2 text-primary"></i>{{ page_title }}</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'announcements:list' %}">Announcements</a></li>
+        <li class="breadcrumb-item active">{{ action }}</li>
+    </ol></nav>
+</div>
+<form method="post" id="announcementForm">
+    {% csrf_token %}
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-edit me-2"></i>Announcement Content</h6></div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Content <span class="text-danger">*</span></label>
+                        {{ form.content }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expiry Date <small class="text-muted">(leave blank for no expiry)</small></label>
+                        {{ form.expiry_date }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-sliders-h me-2"></i>Options</h6></div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        {{ form.is_published }}
+                        <label class="form-check-label ms-2 fw-semibold">Publish immediately</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.send_email }}
+                        <label class="form-check-label ms-2">Send email notification</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.requires_acknowledgment }}
+                        <label class="form-check-label ms-2">Require acknowledgment</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Target Audience</h6></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Filter Type</label>
+                        {{ form.filter_type }}
+                        <small class="text-muted d-block mt-1">Who should see this announcement?</small>
+                    </div>
+
+                    <!-- Entity Type filter row -->
+                    <div id="entityTypeRow" class="mb-3" style="display:none;">
+                        <label class="form-label">Entity Type</label>
+                        <select name="target_entity_type" id="targetEntityType" class="form-select">
+                            <option value="">-- All Entity Types --</option>
+                            <option value="ministry" {% if form.instance.target_entity_type == 'ministry' %}selected{% endif %}>Ministry</option>
+                            <option value="agency" {% if form.instance.target_entity_type == 'agency' %}selected{% endif %}>Agency</option>
+                            <option value="department" {% if form.instance.target_entity_type == 'department' %}selected{% endif %}>Government Department</option>
+                            <option value="local_govt" {% if form.instance.target_entity_type == 'local_govt' %}selected{% endif %}>Local Government (District)</option>
+                        </select>
+                    </div>
+
+                    <!-- Specific entity dropdown -->
+                    <div id="specificEntityRow" class="mb-3" style="display:none;">
+                        <label class="form-label">Select Specific Entity</label>
+                        <select name="target_entity_id" id="specificEntitySelect" class="form-select">
+                            <option value="">-- Select Entity --</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Announcement will only go to employees in this entity.</small>
+                    </div>
+
+                    <!-- Position filter -->
+                    <div id="positionRow" class="mb-3" style="display:none;">
+                        <label class="form-label">Select Position</label>
+                        <select name="target_position_id" id="targetPositionSelect" class="form-select">
+                            <option value="">-- All Positions --</option>
+                            {% for pos in positions %}
+                            <option value="{{ pos.pk }}">{{ pos.name }} ({{ pos.cadre_category.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-2">
+                <i class="fas fa-save me-1"></i>{{ action }} Announcement
+            </button>
+            <a href="{% url 'announcements:list' %}" class="btn btn-outline-secondary w-100">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const filterTypeSelect = document.getElementById('id_filter_type');
+const entityTypeRow = document.getElementById('entityTypeRow');
+const specificEntityRow = document.getElementById('specificEntityRow');
+const positionRow = document.getElementById('positionRow');
+const targetEntityType = document.getElementById('targetEntityType');
+const specificEntitySelect = document.getElementById('specificEntitySelect');
+
+// Entity data loaded from server
+const entityData = {
+    ministry: {{ ministries_json|safe }},
+    agency: {{ agencies_json|safe }},
+    department: {{ departments_json|safe }},
+    local_govt: {{ districts_json|safe }},
+};
+
+function updateFormVisibility() {
+    const val = filterTypeSelect.value;
+    entityTypeRow.style.display = (val === 'entity_type' || val === 'entity') ? 'block' : 'none';
+    specificEntityRow.style.display = (val === 'entity') ? 'block' : 'none';
+    positionRow.style.display = (val === 'position') ? 'block' : 'none';
+    if (val === 'entity') {
+        populateEntitySelect(targetEntityType.value);
+    }
+}
+
+function populateEntitySelect(entityType) {
+    const data = entityData[entityType] || [];
+    specificEntitySelect.innerHTML = '<option value="">-- Select Entity --</option>';
+    data.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item.name;
+        specificEntitySelect.appendChild(opt);
+    });
+}
+
+filterTypeSelect.addEventListener('change', updateFormVisibility);
+targetEntityType.addEventListener('change', function() {
+    if (filterTypeSelect.value === 'entity') {
+        specificEntityRow.style.display = 'block';
+        populateEntitySelect(this.value);
+    }
+});
+
+// Init on load
+updateFormVisibility();
+</script>
+{% endblock %}

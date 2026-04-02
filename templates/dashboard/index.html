@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h1>
+    <p class="text-muted mb-0" style="font-size:13px;">IT Cadre Tracking Database &mdash; Ministry of ICT and National Guidance</p>
+</div>
+
+<!-- Stats Cards Row 1 -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'employees:list' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #1B4F8A; cursor:pointer;">
+            <div class="stat-icon" style="background: #dbeafe;">
+                <i class="fas fa-users" style="color: #1B4F8A;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #1B4F8A;">{{ total_employees }}</div>
+                <div class="stat-label">Total IT Cadre</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'core:settings' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #00897B; cursor:pointer;">
+            <div class="stat-icon" style="background: #d1fae5;">
+                <i class="fas fa-building" style="color: #00897B;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #00897B;">{{ total_entities }}</div>
+                <div class="stat-label">Total Entities</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'employees:list' %}?completion=80" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #F39C12; cursor:pointer;">
+            <div class="stat-icon" style="background: #fef3c7;">
+                <i class="fas fa-check-circle" style="color: #F39C12;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #F39C12;">{{ complete_profiles }}</div>
+                <div class="stat-label">Complete Profiles (&ge;80%)</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'inquiries:list' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #8B5CF6; cursor:pointer;">
+            <div class="stat-icon" style="background: #ede9fe;">
+                <i class="fas fa-question-circle" style="color: #8B5CF6;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #8B5CF6;">{{ inquiries_this_month }}</div>
+                <div class="stat-label">Inquiries This Month</div>
+            </div>
+        </div>
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards Row 2 -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'inquiries:list' %}?status=closed" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #059669; cursor:pointer;">
+            <div class="stat-icon" style="background: #d1fae5;">
+                <i class="fas fa-check-double" style="color: #059669;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #059669;">{{ closed_inquiries_this_month }}</div>
+                <div class="stat-label">Closed Inquiries (Month)</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'announcements:list' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #DC2626; cursor:pointer;">
+            <div class="stat-icon" style="background: #fee2e2;">
+                <i class="fas fa-bullhorn" style="color: #DC2626;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #DC2626;">{{ announcements_this_month }}</div>
+                <div class="stat-label">Active Announcements (Month)</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'announcements:list' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #0284C7; cursor:pointer;">
+            <div class="stat-icon" style="background: #e0f2fe;">
+                <i class="fas fa-eye" style="color: #0284C7;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: #0284C7;">{{ announcement_reads_month }}</div>
+                <div class="stat-label">Announcement Reads (Month)</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <a href="{% url 'employees:create' %}" style="text-decoration:none;">
+        <div class="stat-card" style="border-left-color: #D97706; background: linear-gradient(135deg, #1B4F8A, #00897B);">
+            <div class="stat-icon" style="background: rgba(255,255,255,0.2);">
+                <i class="fas fa-user-plus" style="color: white;"></i>
+            </div>
+            <div>
+                <div class="stat-number" style="color: white;">Add</div>
+                <div class="stat-label" style="color:rgba(255,255,255,0.8);">New Employee</div>
+            </div>
+        </div>
+        </a>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-4 col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Employees by Entity Type</h6>
+                <span class="badge bg-primary">Doughnut</span>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:280px;">
+                <canvas id="entityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Employees by Cadre Category</h6>
+                <span class="badge bg-success">Bar</span>
+            </div>
+            <div class="card-body" style="height:280px;">
+                <canvas id="cadreChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-12">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Profile Completion</h6>
+                <span class="badge" style="background:#F39C12;">Distribution</span>
+            </div>
+            <div class="card-body" style="height:280px;">
+                <canvas id="completionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-question-circle me-2 text-primary"></i>Recent Inquiries</h6>
+                <a href="{% url 'inquiries:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>Reference</th><th>Title</th><th>Priority</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for inq in recent_inquiries %}
+                            <tr>
+                                <td><a href="{% url 'inquiries:detail' inq.pk %}" class="text-primary fw-semibold">{{ inq.reference_number }}</a></td>
+                                <td class="text-truncate" style="max-width:160px;" title="{{ inq.title }}">{{ inq.title }}</td>
+                                <td><span class="badge bg-{{ inq.priority_badge_class }}">{{ inq.get_priority_display }}</span></td>
+                                <td><span class="badge status-{{ inq.status }}">{{ inq.get_status_display }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">No inquiries yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-bullhorn me-2 text-primary"></i>Recent Announcements</h6>
+                <a href="{% url 'announcements:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>Title</th><th>Published</th><th>Reads</th><th>Expiry</th></tr></thead>
+                        <tbody>
+                            {% for ann in recent_announcements %}
+                            <tr>
+                                <td><a href="{% url 'announcements:detail' ann.pk %}" class="text-primary fw-semibold text-truncate d-block" style="max-width:200px;" title="{{ ann.title }}">{{ ann.title }}</a></td>
+                                <td class="small">{{ ann.published_at|date:"M d" }}</td>
+                                <td><span class="badge bg-info">{{ ann.reads_count }}</span></td>
+                                <td class="small {% if ann.expiry_date %}text-warning{% endif %}">
+                                    {{ ann.expiry_date|date:"M d, Y"|default:"&mdash;" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">No announcements yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const COLORS = ['#1B4F8A', '#00897B', '#F39C12', '#8B5CF6', '#DC2626', '#0284C7', '#059669', '#D97706'];
+
+// Entity chart (doughnut)
+const entityCtx = document.getElementById('entityChart').getContext('2d');
+new Chart(entityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ entity_chart_labels|safe }},
+        datasets: [{
+            data: {{ entity_chart_data|safe }},
+            backgroundColor: COLORS,
+            borderWidth: 2, borderColor: '#fff',
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } },
+        cutout: '65%',
+    }
+});
+
+// Cadre chart (bar)
+const cadreCtx = document.getElementById('cadreChart').getContext('2d');
+new Chart(cadreCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ cadre_chart_labels|safe }},
+        datasets: [{
+            label: 'Employees',
+            data: {{ cadre_chart_data|safe }},
+            backgroundColor: '#1B4F8A',
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+        }
+    }
+});
+
+// Completion chart (bar)
+const compCtx = document.getElementById('completionChart').getContext('2d');
+new Chart(compCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ completion_labels|safe }},
+        datasets: [{
+            label: 'Employees',
+            data: {{ completion_data|safe }},
+            backgroundColor: ['#DC2626','#F97316','#F39C12','#84CC16','#22C55E'],
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+        }
+    }
+});
+</script>
+{% endblock %}

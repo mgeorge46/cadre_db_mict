@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-bullhorn me-2 text-primary"></i>Announcements</h1>
+    </div>
+    {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+    <a href="{% url 'announcements:create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>New Announcement</a>
+    {% endif %}
+</div>
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>Title</th><th>Status</th><th>Published</th><th>Expiry</th><th>Reads</th><th>Acknowledged</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for ann in page_obj %}
+                <tr>
+                    <td><a href="{% url 'announcements:detail' ann.pk %}" class="text-decoration-none fw-semibold">{{ ann.title }}</a></td>
+                    <td>{% if ann.is_published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-warning text-dark">Draft</span>{% endif %}</td>
+                    <td class="small">{{ ann.published_at|date:"M d, Y"|default:"—" }}</td>
+                    <td class="small {% if ann.expiry_date %}text-warning{% endif %}">{{ ann.expiry_date|date:"M d, Y"|default:"No expiry" }}</td>
+                    <td><span class="badge bg-info">{{ ann.reads_count }}</span></td>
+                    <td><span class="badge bg-success">{{ ann.acknowledged_count }}</span></td>
+                    <td>
+                        <a href="{% url 'announcements:detail' ann.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+                        <a href="{% url 'announcements:edit' ann.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="{% url 'announcements:delete' ann.pk %}" style="display:inline;">
+                            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-5 text-muted">No announcements.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

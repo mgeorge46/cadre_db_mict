@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-file-import me-2 text-primary"></i>{{ page_title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% if errors %}
+        <div class="card mb-4">
+            <div class="card-header bg-warning-subtle">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Import Errors ({{ errors|length }} shown)</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for err in errors %}
+                    <li class="list-group-item small text-danger">{{ err }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'employees:import' %}" class="btn btn-primary"><i class="fas fa-file-import me-1"></i>Import More</a>
+            <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary"><i class="fas fa-list me-1"></i>View Employees</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

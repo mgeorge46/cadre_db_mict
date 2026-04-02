@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% block title %}{{ emp.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1 class="page-title">{{ emp.user.get_full_name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'employees:list' %}">Employees</a></li>
+                <li class="breadcrumb-item active">{{ emp.user.get_full_name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+        <a href="{% url 'employees:magic_link' emp.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-magic me-1"></i>Magic Link
+        </a>
+        <a href="{% url 'employees:edit_bio' emp.pk %}" class="btn btn-warning btn-sm">
+            <i class="fas fa-edit me-1"></i>Edit
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Profile Header Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center g-4">
+            <div class="col-auto">
+                {% if emp.profile_photo %}
+                <img src="{{ emp.profile_photo.url }}" alt="" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #e5e7eb;">
+                {% else %}
+                <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#1B4F8A,#00897B);display:flex;align-items:center;justify-content:center;color:white;font-size:32px;font-weight:700;">
+                    {{ emp.user.first_name.0 }}{{ emp.user.last_name.0 }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="col">
+                <h4 class="fw-bold mb-1">{{ emp.title }} {{ emp.user.get_full_name }}</h4>
+                <div class="text-muted small mb-2">
+                    {% if emp.position %}<span class="me-3"><i class="fas fa-briefcase me-1"></i>{{ emp.position.name }}</span>{% endif %}
+                    {% if emp.cadre_category %}<span class="me-3"><i class="fas fa-layer-group me-1"></i>{{ emp.cadre_category.name }}</span>{% endif %}
+                    {% if emp.job_rank %}<span class="me-3"><i class="fas fa-sort-amount-up me-1"></i>{{ emp.job_rank.name }}</span>{% endif %}
+                </div>
+                <div class="text-muted small">
+                    <span class="me-3"><i class="fas fa-building me-1"></i>{{ emp.get_entity_name }}</span>
+                    <span class="me-3"><i class="fas fa-id-card me-1"></i>#{{ emp.employee_number }}</span>
+                    {% if emp.employee_type %}<span class="badge bg-primary">{{ emp.employee_type.name }}</span>{% endif %}
+                    {% if emp.is_active %}<span class="badge bg-success ms-1">Active</span>{% else %}<span class="badge bg-danger ms-1">Inactive</span>{% endif %}
+                </div>
+            </div>
+            <div class="col-auto">
+                <div style="width:120px;text-align:center;">
+                    <div style="font-size:36px;font-weight:700;color:{% if emp.profile_completion >= 80 %}#059669{% elif emp.profile_completion >= 50 %}#F39C12{% else %}#DC2626{% endif %};">{{ emp.profile_completion }}%</div>
+                    <div class="completion-bar mt-1"><div class="completion-fill" style="width:{{ emp.profile_completion }}%;"></div></div>
+                    <div style="font-size:11px;color:#64748b;margin-top:4px;">Profile Complete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="card mb-3">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="profileTabs">
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'bio' %}active{% endif %}" href="?tab=bio">
+                    <i class="fas fa-user me-1"></i>Bio Data
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'work' %}active{% endif %}" href="?tab=work">
+                    <i class="fas fa-briefcase me-1"></i>Work Info
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'history' %}active{% endif %}" href="?tab=history">
+                    <i class="fas fa-history me-1"></i>Career History
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'deployments' %}active{% endif %}" href="?tab=deployments">
+                    <i class="fas fa-exchange-alt me-1"></i>Deployments
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body">
+        <!-- BIO TAB -->
+        {% if tab == 'bio' %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0">Personal Information</h6>
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <a href="{% url 'employees:edit_bio' emp.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit Bio</a>
+            {% endif %}
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3"><div class="text-muted small">Title</div><div class="fw-semibold">{{ emp.title|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Gender</div><div class="fw-semibold">{{ emp.get_gender_display|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Date of Birth</div><div class="fw-semibold">{{ emp.date_of_birth|date:"M d, Y"|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Nationality</div><div class="fw-semibold">{{ emp.nationality }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">National ID</div><div class="fw-semibold">{{ emp.national_id|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Passport</div><div class="fw-semibold">{{ emp.passport_number|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">TIN Number</div><div class="fw-semibold">{{ emp.tin_number|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">NSSF Number</div><div class="fw-semibold">{{ emp.nssf_number|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Phone (Primary)</div><div class="fw-semibold">{{ emp.phone_primary|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Phone (Secondary)</div><div class="fw-semibold">{{ emp.phone_secondary|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Personal Email</div><div class="fw-semibold">{{ emp.personal_email|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Marital Status</div><div class="fw-semibold">{{ emp.get_marital_status_display|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Blood Type</div><div class="fw-semibold">{{ emp.blood_type|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Religion</div><div class="fw-semibold">{{ emp.religion|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">District (Origin)</div><div class="fw-semibold">{{ emp.district_of_origin|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">District (Residence)</div><div class="fw-semibold">{{ emp.district_of_residence|default:"—" }}</div></div>
+            <div class="col-12"><div class="text-muted small">Physical Address</div><div class="fw-semibold">{{ emp.physical_address|default:"—" }}</div></div>
+            {% if emp.has_disability %}
+            <div class="col-12"><div class="text-muted small">Disability</div><div class="fw-semibold text-warning"><i class="fas fa-info-circle me-1"></i>{{ emp.disability_description|default:"Yes" }}</div></div>
+            {% endif %}
+        </div>
+
+        <hr>
+        <h6 class="section-title">Next of Kin</h6>
+        <div class="row g-3">
+            <div class="col-md-3"><div class="text-muted small">Name</div><div class="fw-semibold">{{ emp.next_of_kin_name|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Relationship</div><div class="fw-semibold">{{ emp.next_of_kin_relationship|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Phone</div><div class="fw-semibold">{{ emp.next_of_kin_phone|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Email</div><div class="fw-semibold">{{ emp.next_of_kin_email|default:"—" }}</div></div>
+        </div>
+
+        <hr>
+        <h6 class="section-title">Emergency Contact</h6>
+        <div class="row g-3">
+            <div class="col-md-4"><div class="text-muted small">Name</div><div class="fw-semibold">{{ emp.emergency_contact_name|default:"—" }}</div></div>
+            <div class="col-md-4"><div class="text-muted small">Phone</div><div class="fw-semibold">{{ emp.emergency_contact_phone|default:"—" }}</div></div>
+            <div class="col-md-4"><div class="text-muted small">Relationship</div><div class="fw-semibold">{{ emp.emergency_contact_relationship|default:"—" }}</div></div>
+        </div>
+
+        {% elif tab == 'work' %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0">Work Information</h6>
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <a href="{% url 'employees:edit_work' emp.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit me-1"></i>Edit Work Info</a>
+            {% endif %}
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3"><div class="text-muted small">Employee Number</div><div class="fw-semibold"><code>{{ emp.employee_number }}</code></div></div>
+            <div class="col-md-3"><div class="text-muted small">Employee Type</div><div class="fw-semibold">{{ emp.employee_type.name|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Entity Type</div><div class="fw-semibold">{{ emp.get_entity_type_display|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Entity</div><div class="fw-semibold">{{ emp.get_entity_name }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Cadre Category</div><div class="fw-semibold">{{ emp.cadre_category.name|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Position</div><div class="fw-semibold">{{ emp.position.name|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Job Rank</div><div class="fw-semibold">{{ emp.job_rank.name|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Work Location</div><div class="fw-semibold">{{ emp.work_location|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Date Joined Position</div><div class="fw-semibold">{{ emp.date_joined_position|date:"M d, Y"|default:"—" }}</div></div>
+            <div class="col-md-3"><div class="text-muted small">Date Joined Ministry</div><div class="fw-semibold">{{ emp.date_joined_ministry|date:"M d, Y"|default:"—" }}</div></div>
+            {% if emp.employee_type and 'contract' in emp.employee_type.name|lower %}
+            <div class="col-md-3"><div class="text-muted small">Contract End Date</div>
+                <div class="fw-semibold {% if emp.contract_end_date %}text-warning{% endif %}">{{ emp.contract_end_date|date:"M d, Y"|default:"—" }}</div>
+            </div>
+            {% endif %}
+            <div class="col-md-3"><div class="text-muted small">Reporting To</div><div class="fw-semibold">{{ emp.reporting_to.user.get_full_name|default:"—" }}</div></div>
+        </div>
+        {% if emp.roles.exists %}
+        <hr>
+        <h6 class="section-title">Roles</h6>
+        <div class="d-flex flex-wrap gap-2">
+            {% for role in emp.roles.all %}
+            <span class="badge" style="background:#dbeafe;color:#1B4F8A;">{{ role.name }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% elif tab == 'history' %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0">Career History</h6>
+            <a href="{% url 'employees:history_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+        </div>
+
+        {% if employment_history %}
+        <div class="timeline">
+            {% for hist in employment_history %}
+            <div class="card mb-3" style="border-left: 4px solid {% if hist.is_current %}#00897B{% else %}#e5e7eb{% endif %};">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="fw-bold mb-1">{{ hist.position_title }}</h6>
+                            <div class="text-muted small">
+                                <i class="fas fa-building me-1"></i>{{ hist.entity_name }}
+                                ({{ hist.get_entity_type_display }})
+                                {% if hist.cadre_category %}&bull; {{ hist.cadre_category }}{% endif %}
+                                {% if hist.job_rank %}&bull; {{ hist.job_rank }}{% endif %}
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <i class="fas fa-calendar me-1"></i>{{ hist.start_date|date:"M Y" }} &ndash;
+                                {% if hist.is_current %}<span class="badge bg-success">Current</span>
+                                {% else %}{{ hist.end_date|date:"M Y"|default:"Present" }}{% endif %}
+                            </div>
+                            {% if hist.notes %}<div class="text-muted small mt-1"><i class="fas fa-sticky-note me-1"></i>{{ hist.notes }}</div>{% endif %}
+                        </div>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'employees:history_edit' emp.pk hist.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                            <form method="post" action="{% url 'employees:history_delete' emp.pk hist.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this history entry?')"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4"><i class="fas fa-history"></i><h5>No employment history</h5></div>
+        {% endif %}
+
+        {% elif tab == 'deployments' %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0">Deployment & Transfer History</h6>
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <a href="{% url 'employees:deployment_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+            {% endif %}
+        </div>
+        {% if deployments %}
+        <div class="timeline">
+            {% for dep in deployments %}
+            <div class="card mb-3" style="border-left: 4px solid {% if not dep.end_date %}#00897B{% else %}#e5e7eb{% endif %};">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-primary">{{ dep.get_transfer_type_display }}</span>
+                                {% if not dep.end_date %}<span class="badge bg-success">Active</span>{% endif %}
+                            </div>
+                            <h6 class="fw-bold mb-1">
+                                {% if dep.from_entity_name %}<span class="text-muted">{{ dep.from_entity_name }}</span> <i class="fas fa-arrow-right mx-2 text-primary"></i>{% endif %}
+                                {{ dep.to_entity_name }}
+                            </h6>
+                            {% if dep.from_position or dep.to_position %}
+                            <div class="text-muted small">
+                                {% if dep.from_position %}<i class="fas fa-briefcase me-1"></i>{{ dep.from_position }} →{% endif %}
+                                {% if dep.to_position %} {{ dep.to_position }}{% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="text-muted small mt-1">
+                                <i class="fas fa-calendar me-1"></i>Effective: {{ dep.effective_date|date:"M d, Y" }}
+                                {% if dep.end_date %} &ndash; {{ dep.end_date|date:"M d, Y" }}{% endif %}
+                            </div>
+                            {% if dep.reason %}<div class="text-muted small mt-1"><i class="fas fa-info-circle me-1"></i>{{ dep.reason }}</div>{% endif %}
+                            {% if dep.reference_number %}<div class="text-muted small"><i class="fas fa-hashtag me-1"></i>Ref: {{ dep.reference_number }}</div>{% endif %}
+                        </div>
+                        {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'employees:deployment_edit' emp.pk dep.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                            <form method="post" action="{% url 'employees:deployment_delete' emp.pk dep.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this deployment record?')"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4"><i class="fas fa-exchange-alt"></i><h5>No deployment records</h5><p class="text-muted small">Transfer and deployment history will appear here.</p></div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Accordions for qualifications, certifications, etc. -->
+<div class="accordion" id="profileAccordion">
+    <!-- Qualifications -->
+    <div class="accordion-item border-0 mb-2 rounded">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#qualAcc">
+                <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                Qualifications <span class="badge bg-primary ms-2">{{ qualifications|length }}</span>
+            </button>
+        </h2>
+        <div id="qualAcc" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{% url 'employees:qualification_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+                </div>
+                {% if qualifications %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Type</th><th>Institution</th><th>Field</th><th>Year</th><th>Grade</th><th></th></tr></thead>
+                        <tbody>
+                        {% for q in qualifications %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ q.get_qualification_type_display }}</span></td>
+                            <td>{{ q.institution }}</td>
+                            <td>{{ q.field_of_study }}</td>
+                            <td>{{ q.end_date|date:"Y"|default:"—" }}</td>
+                            <td>{{ q.grade|default:"—" }}</td>
+                            <td>
+                                {% if q.document %}<a href="{{ q.document.url }}" class="btn btn-sm btn-outline-success" target="_blank"><i class="fas fa-file"></i></a>{% endif %}
+                                <a href="{% url 'employees:qualification_edit' emp.pk q.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                                <form method="post" action="{% url 'employees:qualification_delete' emp.pk q.pk %}" style="display:inline;">
+                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state py-3"><i class="fas fa-graduation-cap"></i><h5>No qualifications added</h5></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Certifications -->
+    <div class="accordion-item border-0 mb-2 rounded">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#certAcc">
+                <i class="fas fa-certificate me-2 text-warning"></i>
+                Certifications & Licenses <span class="badge bg-warning text-dark ms-2">{{ certifications|length }}</span>
+            </button>
+        </h2>
+        <div id="certAcc" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{% url 'employees:certification_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+                </div>
+                {% if certifications %}
+                <div class="row g-3">
+                {% for cert in certifications %}
+                <div class="col-md-4">
+                    <div class="card" style="border-left: 4px solid {% if cert.is_expired %}#DC2626{% else %}#00897B{% endif %};">
+                        <div class="card-body py-3">
+                            <h6 class="fw-bold small mb-1">{{ cert.name }}</h6>
+                            <div class="text-muted" style="font-size:11px;">{{ cert.issuing_body }}</div>
+                            <div class="text-muted" style="font-size:11px;">Attained: {{ cert.date_attained|date:"M Y" }}</div>
+                            {% if cert.has_expiry and cert.expiry_date %}
+                            <div style="font-size:11px;" class="{% if cert.is_expired %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                Expires: {{ cert.expiry_date|date:"M d, Y" }}
+                                {% if cert.is_expired %}<span class="badge bg-danger">Expired</span>{% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="d-flex gap-1 mt-2">
+                                {% if cert.document %}<a href="{{ cert.document.url }}" class="btn btn-sm btn-outline-success" target="_blank"><i class="fas fa-file"></i></a>{% endif %}
+                                <form method="post" action="{% url 'employees:certification_delete' emp.pk cert.pk %}" style="display:inline;">
+                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state py-3"><i class="fas fa-certificate"></i><h5>No certifications added</h5></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Publications -->
+    <div class="accordion-item border-0 mb-2 rounded">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#pubAcc">
+                <i class="fas fa-book me-2 text-secondary"></i>
+                Publications <span class="badge bg-secondary ms-2">{{ publications|length }}</span>
+            </button>
+        </h2>
+        <div id="pubAcc" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{% url 'employees:publication_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+                </div>
+                {% if publications %}
+                {% for pub in publications %}
+                <div class="card mb-2">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="fw-bold small mb-1">{{ pub.title }}</h6>
+                                {% if pub.journal_or_publisher %}<div class="text-muted small">{{ pub.journal_or_publisher }}</div>{% endif %}
+                                <div class="text-muted small">Published: {{ pub.date_published|date:"M Y" }}</div>
+                                {% if pub.url %}<a href="{{ pub.url }}" target="_blank" class="small text-primary"><i class="fas fa-external-link-alt me-1"></i>View</a>{% endif %}
+                            </div>
+                            <form method="post" action="{% url 'employees:publication_delete' emp.pk pub.pk %}">
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state py-3"><i class="fas fa-book"></i><h5>No publications added</h5></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Events & Seminars -->
+    <div class="accordion-item border-0 mb-2 rounded">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#evtAcc">
+                <i class="fas fa-calendar-check me-2 text-info"></i>
+                Events & Seminars <span class="badge bg-info ms-2">{{ events|length }}</span>
+            </button>
+        </h2>
+        <div id="evtAcc" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{% url 'employees:event_add' emp.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add</a>
+                </div>
+                {% if events %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Event</th><th>Organizer</th><th>Date</th><th>Duration</th><th>Certificate</th><th></th></tr></thead>
+                        <tbody>
+                        {% for evt in events %}
+                        <tr>
+                            <td><strong class="small">{{ evt.name }}</strong></td>
+                            <td class="small">{{ evt.organizer|default:"—" }}</td>
+                            <td class="small">{{ evt.date_attended|date:"M d, Y" }}</td>
+                            <td class="small">{{ evt.duration_days }} day{{ evt.duration_days|pluralize }}</td>
+                            <td>{% if evt.certificate_obtained %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+                            <td>
+                                {% if evt.document %}<a href="{{ evt.document.url }}" class="btn btn-sm btn-outline-success" target="_blank"><i class="fas fa-file"></i></a>{% endif %}
+                                <form method="post" action="{% url 'employees:event_delete' emp.pk evt.pk %}" style="display:inline;">
+                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state py-3"><i class="fas fa-calendar-check"></i><h5>No events added</h5></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

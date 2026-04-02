@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | IT Cadre Tracking Database</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1B4F8A; --secondary: #00897B; --accent: #F39C12; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2940 0%, #1B4F8A 50%, #00897B 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+
+        .login-wrapper {
+            display: flex; align-items: center; justify-content: center;
+            gap: 60px; max-width: 960px; width: 100%;
+        }
+
+        .login-branding { flex: 1; color: white; text-align: center; }
+        .ministry-logo {
+            width: 90px; height: 90px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            font-size: 36px; font-weight: 800;
+            backdrop-filter: blur(4px);
+        }
+
+        .ministry-name {
+            font-size: 20px; font-weight: 700; margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .system-name {
+            font-size: 14px; opacity: 0.8; line-height: 1.5;
+        }
+
+        .feature-list {
+            list-style: none; padding: 0; margin-top: 32px; text-align: left;
+        }
+
+        .feature-list li {
+            padding: 8px 0; font-size: 13.5px; opacity: 0.85;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .feature-list li i { color: var(--accent); width: 18px; }
+
+        .login-card {
+            background: white; border-radius: 20px;
+            padding: 40px; width: 400px; flex-shrink: 0;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+        }
+
+        .login-title { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        .login-subtitle { font-size: 13.5px; color: #64748b; margin-bottom: 28px; }
+
+        .form-label { font-size: 13px; font-weight: 600; color: #374151; }
+
+        .form-control {
+            border-radius: 10px; border: 1.5px solid #e5e7eb;
+            padding: 10px 14px; font-size: 14px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27,79,138,0.1);
+        }
+
+        .input-group .form-control { border-radius: 10px 0 0 10px; }
+
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary), #2563aa);
+            border: none; width: 100%; padding: 12px;
+            border-radius: 10px; color: white; font-weight: 600;
+            font-size: 15px; cursor: pointer; transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #163d6b, var(--primary));
+            transform: translateY(-1px); box-shadow: 0 4px 16px rgba(27,79,138,0.4);
+        }
+
+        .error-msg { background: #fee2e2; color: #dc2626; border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; }
+
+        @media (max-width: 768px) {
+            .login-branding { display: none; }
+            .login-card { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-branding">
+            <div class="ministry-logo">IC</div>
+            <div class="ministry-name">Ministry of ICT and National Guidance</div>
+            <div class="system-name">Republic of Uganda</div>
+            <ul class="feature-list">
+                <li><i class="fas fa-users"></i> Track IT Cadre across government</li>
+                <li><i class="fas fa-building"></i> Manage Ministries, Agencies & Departments</li>
+                <li><i class="fas fa-file-contract"></i> Schemes & Policy Management</li>
+                <li><i class="fas fa-bullhorn"></i> Announcements & Communications</li>
+                <li><i class="fas fa-chart-bar"></i> Analytics & Reporting</li>
+                <li><i class="fas fa-shield-alt"></i> Secure & Role-Based Access</li>
+            </ul>
+        </div>
+
+        <div class="login-card">
+            <div style="margin-bottom: 8px;">
+                <span style="background: #dbeafe; color: var(--primary); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">IT Cadre Tracking Database</span>
+            </div>
+            <h1 class="login-title">Welcome back</h1>
+            <p class="login-subtitle">Sign in to your account to continue</p>
+
+            {% if form.errors %}
+            <div class="error-msg">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Invalid email or password. Please try again.
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.username.id_for_label }}">
+                        <i class="fas fa-envelope me-1"></i> Email Address
+                    </label>
+                    {{ form.username }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">
+                        <i class="fas fa-lock me-1"></i> Password
+                    </label>
+                    {{ form.password }}
+                </div>
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt me-2"></i> Sign In
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; text-align: center; font-size: 12px; color: #94a3b8;">
+                Government of Uganda &copy; {% now "Y" %} | Ministry of ICT and National Guidance
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

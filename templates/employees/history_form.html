@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-history me-2 text-primary"></i>{{ page_title }}</h1>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">{{ form.position_title.label_tag }}{{ form.position_title }}</div>
+                        <div class="col-md-6">{{ form.cadre_category.label_tag }}{{ form.cadre_category }}</div>
+                        <div class="col-md-6">{{ form.entity_type.label_tag }}{{ form.entity_type }}</div>
+                        <div class="col-md-6">{{ form.entity_name.label_tag }}{{ form.entity_name }}</div>
+                        <div class="col-md-6">{{ form.job_rank.label_tag }}{{ form.job_rank }}</div>
+                        <div class="col-md-3">{{ form.start_date.label_tag }}{{ form.start_date }}</div>
+                        <div class="col-md-3">{{ form.end_date.label_tag }}{{ form.end_date }}</div>
+                        <div class="col-md-4">
+                            <label class="form-label">Is Current Position?</label>
+                            <div class="form-check mt-2">{{ form.is_current }} <label class="form-check-label" for="{{ form.is_current.id_for_label }}">Yes, this is the current position</label></div>
+                        </div>
+                        <div class="col-12">{{ form.notes.label_tag }}{{ form.notes }}</div>
+                    </div>
+                    {% if form.errors %}
+                    <div class="alert alert-danger mt-3">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                        <a href="{% url 'employees:detail' emp.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function(){
+    const entityType = $('[name="entity_type"]');
+    const entityName = $('[name="entity_name"]');
+
+    function loadEntities(type, target, selectedVal) {
+        if (!type) { target.empty().append('<option value="">-- Select Entity --</option>'); return; }
+        $.getJSON('{% url "core:ajax_entities" %}', {entity_type: type}, function(data) {
+            target.empty().append('<option value="">-- Select Entity --</option>');
+            data.entities.forEach(function(e) {
+                const sel = (e.name === selectedVal) ? ' selected' : '';
+                target.append('<option value="' + e.name + '"' + sel + '>' + e.name + '</option>');
+            });
+            target.trigger('change.select2');
+        });
+    }
+
+    entityType.on('change', function() {
+        loadEntities($(this).val(), entityName, '');
+    });
+
+    // Pre-load for edit
+    const initialType = entityType.val();
+    const initialName = '{{ form.entity_name.value|default:"" }}';
+    if (initialType) {
+        loadEntities(initialType, entityName, initialName);
+    }
+});
+</script>
+{% endblock %}

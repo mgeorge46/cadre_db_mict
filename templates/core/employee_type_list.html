@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Employee Types{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div><h1 class="page-title"><i class="fas fa-id-badge me-2 text-primary"></i>Employee Types</h1></div>
+    <a href="{% url 'core:employee_type_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Type</a>
+</div>
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ item.name }}</strong></td>
+                    <td class="small text-muted">{{ item.description|default:"—" }}</td>
+                    <td>{% if item.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                    <td>
+                        <a href="{% url 'core:employee_type_edit' item.pk %}" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="{% url 'core:employee_type_delete' item.pk %}" style="display:inline;">
+                            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No employee types. <a href="{% url 'core:employee_type_create' %}">Add one</a>.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
