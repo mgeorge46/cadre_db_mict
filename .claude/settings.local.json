@@ -38,7 +38,8 @@
       "Bash(\"C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe\" manage.py migrate)",
       "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py check)",
       "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c \":*)",
-      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py migrate --check)"
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py migrate --check)",
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c ' *)"
     ]
   }
 }
