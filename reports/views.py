@@ -220,7 +220,7 @@ def export_excel(request):
     if report_type == 'employee_list':
         ws.title = 'Employee List'
         headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity Type', 'Entity',
-                   'Cadre Category', 'Position', 'Job Rank', 'Employee Type', 'Date Joined', 'Profile %']
+                   'Cadre Category', 'Speciality', 'Position', 'Employee Type', 'Date Joined', 'Profile %']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
@@ -248,7 +248,7 @@ def export_excel(request):
     elif report_type == 'contract_expiry':
         ws.title = 'Contract Expiry'
         employees = employees.filter(contract_end_date__isnull=False).order_by('contract_end_date')
-        headers = ['#', 'Employee No.', 'Full Name', 'Entity', 'Position', 'Contract End Date', 'Days Remaining']
+        headers = ['#', 'Employee No.', 'Full Name', 'Entity', 'Speciality', 'Contract End Date', 'Days Remaining']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
@@ -265,9 +265,9 @@ def export_excel(request):
             ws.cell(row=row_num, column=7, value=days)
 
     elif report_type == 'time_in_position':
-        ws.title = 'Time in Position'
+        ws.title = 'Time in Speciality'
         employees_list = employees.filter(date_joined_position__isnull=False).order_by('date_joined_position')
-        headers = ['#', 'Employee No.', 'Full Name', 'Entity', 'Cadre Category', 'Position', 'Date Joined Position', 'Years in Position']
+        headers = ['#', 'Employee No.', 'Full Name', 'Entity', 'Cadre Category', 'Speciality', 'Date Joined Speciality', 'Years in Speciality']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
@@ -290,7 +290,7 @@ def export_excel(request):
 
     elif report_type == 'deployment_by_entity':
         ws.title = 'Deployment by Entity'
-        headers = ['#', 'Employee No.', 'Full Name', 'Entity Type', 'Entity', 'Cadre Category', 'Position', 'Job Rank', 'Date Joined']
+        headers = ['#', 'Employee No.', 'Full Name', 'Entity Type', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Date Joined']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font

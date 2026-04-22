@@ -6,6 +6,13 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from .models import (Ministry, Agency, GovernmentDepartment, District,
                      EmployeeType, CadreCategory, Position, Role, JobRank, SystemSettings)
+# ─────────────────────────────────────────────────────────────────────────────
+# UI RENAME NOTE (maintainers):
+#   Position  model  → labelled "Speciality" in the UI (url: /core/positions/)
+#   JobRank   model  → labelled "Position"   in the UI (url: /core/job-ranks/)
+#   JobRank.code     → labelled "Scale"       in the UI
+#   Field/model names are unchanged — only page titles and form labels differ.
+# ─────────────────────────────────────────────────────────────────────────────
 from .forms import (MinistryForm, AgencyForm, GovernmentDepartmentForm, DistrictForm,
                     EmployeeTypeForm, CadreCategoryForm, PositionForm, RoleForm,
                     JobRankForm, SystemSettingsForm)
@@ -322,9 +329,9 @@ def position_list(request):
     if request.GET.get('export') == 'csv':
         import csv
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="positions.csv"'
+        response['Content-Disposition'] = 'attachment; filename="specialities.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Position Name', 'Category', 'Description', 'Roles Count', 'Status'])
+        writer.writerow(['Speciality Name', 'Category', 'Description', 'Roles Count', 'Status'])
         for p in qs:
             writer.writerow([p.name, p.cadre_category.name, p.description or '', p.role_count, 'Active' if p.is_active else 'Inactive'])
         return response
@@ -335,8 +342,8 @@ def position_list(request):
         'page_obj': page_obj, 'search': search, 'per_page': per_page,
         'categories': CadreCategory.objects.filter(is_active=True),
         'cat_filter': cat_filter,
-        'page_title': 'Positions',
-        'breadcrumbs': [('Settings', None), ('Cadre Management', None), ('Positions', None)]
+        'page_title': 'Specialities',
+        'breadcrumbs': [('Settings', None), ('Cadre Management', None), ('Specialities', None)]
     })
 
 
@@ -380,11 +387,11 @@ def position_create(request):
     form = PositionForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Position created.')
+        messages.success(request, 'Speciality created.')
         return redirect('core:position_list')
     return render(request, 'core/entity_form.html', {
-        'form': form, 'entity_type': 'Position', 'action': 'Create',
-        'back_url': 'core:position_list', 'page_title': 'Add Position'
+        'form': form, 'entity_type': 'Speciality', 'action': 'Create',
+        'back_url': 'core:position_list', 'page_title': 'Add Speciality'
     })
 
 
@@ -394,11 +401,11 @@ def position_edit(request, pk):
     form = PositionForm(request.POST or None, instance=obj)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Position updated.')
+        messages.success(request, 'Speciality updated.')
         return redirect('core:position_list')
     return render(request, 'core/entity_form.html', {
-        'form': form, 'entity_type': 'Position', 'action': 'Edit', 'obj': obj,
-        'back_url': 'core:position_list', 'page_title': 'Edit Position'
+        'form': form, 'entity_type': 'Speciality', 'action': 'Edit', 'obj': obj,
+        'back_url': 'core:position_list', 'page_title': 'Edit Speciality'
     })
 
 
@@ -407,10 +414,10 @@ def position_delete(request, pk):
     obj = get_object_or_404(Position, pk=pk)
     if request.method == 'POST':
         if obj.roles.exists():
-            messages.error(request, f'Cannot delete position "{obj.name}" — it has roles assigned. Delete all roles first.')
+            messages.error(request, f'Cannot delete speciality "{obj.name}" — it has roles assigned. Delete all roles first.')
             return redirect('core:position_list')
         obj.delete()
-        messages.success(request, 'Position deleted.')
+        messages.success(request, 'Speciality deleted.')
     return redirect('core:position_list')
 
 
@@ -467,9 +474,9 @@ def job_rank_list(request):
     if request.GET.get('export') == 'csv':
         import csv
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="job_ranks.csv"'
+        response['Content-Disposition'] = 'attachment; filename="positions.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Name', 'Code', 'Category', 'Entity Type', 'Level', 'Status'])
+        writer.writerow(['Position Name', 'Scale (Code)', 'Category', 'Entity Type', 'Level', 'Status'])
         for item in qs:
             writer.writerow([item.name, item.code, item.cadre_category.name if item.cadre_category else 'All',
                              item.get_entity_type_display(), item.level, 'Active' if item.is_active else 'Inactive'])
@@ -481,8 +488,8 @@ def job_rank_list(request):
         'page_obj': page_obj, 'search': search, 'per_page': per_page,
         'categories': CadreCategory.objects.filter(is_active=True),
         'cat_filter': cat_filter,
-        'page_title': 'Job Ranks',
-        'breadcrumbs': [('Settings', None), ('Job Ranks', None)]
+        'page_title': 'Positions',
+        'breadcrumbs': [('Settings', None), ('Positions', None)]
     })
 
 
@@ -491,11 +498,11 @@ def job_rank_create(request):
     form = JobRankForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Job rank created.')
+        messages.success(request, 'Position created.')
         return redirect('core:job_rank_list')
     return render(request, 'core/entity_form.html', {
-        'form': form, 'entity_type': 'Job Rank', 'action': 'Create',
-        'back_url': 'core:job_rank_list', 'page_title': 'Add Job Rank'
+        'form': form, 'entity_type': 'Position', 'action': 'Create',
+        'back_url': 'core:job_rank_list', 'page_title': 'Add Position'
     })
 
 
@@ -505,11 +512,11 @@ def job_rank_edit(request, pk):
     form = JobRankForm(request.POST or None, instance=obj)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Job rank updated.')
+        messages.success(request, 'Position updated.')
         return redirect('core:job_rank_list')
     return render(request, 'core/entity_form.html', {
-        'form': form, 'entity_type': 'Job Rank', 'action': 'Edit', 'obj': obj,
-        'back_url': 'core:job_rank_list', 'page_title': 'Edit Job Rank'
+        'form': form, 'entity_type': 'Position', 'action': 'Edit', 'obj': obj,
+        'back_url': 'core:job_rank_list', 'page_title': 'Edit Position'
     })
 
 
@@ -522,7 +529,7 @@ def job_rank_delete(request, pk):
             messages.error(request, f'Cannot delete "{obj.name}" — it is assigned to employees.')
             return redirect('core:job_rank_list')
         obj.delete()
-        messages.success(request, 'Job rank deleted.')
+        messages.success(request, 'Position deleted.')
     return redirect('core:job_rank_list')
 
 

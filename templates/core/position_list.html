@@ -5,7 +5,7 @@
     <div><h1 class="page-title"><i class="fas fa-briefcase me-2 text-primary"></i>{{ page_title }}</h1></div>
     <div class="d-flex gap-2">
         <a href="{% url 'core:position_list' %}?export=csv{% if search %}&search={{ search }}{% endif %}{% if cat_filter %}&category={{ cat_filter }}{% endif %}" class="btn btn-outline-success btn-sm"><i class="fas fa-file-csv me-1"></i>Export CSV</a>
-        <a href="{% url 'core:position_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Position</a>
+        <a href="{% url 'core:position_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Speciality</a>
     </div>
 </div>
 
@@ -44,7 +44,7 @@
 
 <!-- Results info -->
 <div class="d-flex justify-content-between align-items-center mb-2">
-    <small class="text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} positions</small>
+    <small class="text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} specialities</small>
 </div>
 
 <!-- Table -->
@@ -55,7 +55,7 @@
                 <thead>
                     <tr>
                         <th style="width:50px">#</th>
-                        <th>Position Name</th>
+                        <th>Speciality Name</th>
                         <th>Category</th>
                         <th>Description</th>
                         <th class="text-center">Roles</th>
@@ -77,12 +77,12 @@
                         <td>
                             <a href="{% url 'core:position_edit' pos.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
                             <form method="post" action="{% url 'core:position_delete' pos.pk %}" style="display:inline;">
-                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete position {{ pos.name }}? This will fail if it has roles.')"><i class="fas fa-trash"></i></button>
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete speciality {{ pos.name }}? This will fail if it has roles.')"><i class="fas fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="7" class="text-center py-4 text-muted">No positions found. <a href="{% url 'core:position_create' %}">Add one</a></td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No specialities found. <a href="{% url 'core:position_create' %}">Add one</a></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

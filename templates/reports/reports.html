@@ -31,7 +31,7 @@
                             <label class="form-label fw-semibold">Report Type</label>
                             <select name="report_type" class="form-select" id="reportTypeSelect">
                                 <option value="employee_list">Employee List</option>
-                                <option value="time_in_position">Time in Position</option>
+                                <option value="time_in_position">Time in Speciality</option>
                                 <option value="deployment_by_entity">Deployment by Entity</option>
                                 <option value="contract_expiry">Contract Expiry</option>
                             </select>
@@ -57,7 +57,7 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Position</label>
+                            <label class="form-label">Speciality</label>
                             <select name="position" class="form-select">
                                 <option value="">All</option>
                                 {% for pos in positions %}
@@ -66,7 +66,7 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Job Rank</label>
+                            <label class="form-label">Position</label>
                             <select name="job_rank" class="form-select">
                                 <option value="">All</option>
                                 {% for jr in job_ranks %}
@@ -94,7 +94,7 @@
 
                         <div id="timeInPositionFilters" class="d-none">
                             <hr class="my-2">
-                            <div class="text-muted small fw-semibold mb-2"><i class="fas fa-clock me-1"></i>Time in Position</div>
+                            <div class="text-muted small fw-semibold mb-2"><i class="fas fa-clock me-1"></i>Time in Speciality</div>
                             <div class="row g-2 mb-2">
                                 <div class="col-5">
                                     <select name="years_operator" class="form-select form-select-sm no-select2">
@@ -196,7 +196,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="card" style="border-left:4px solid #8B5CF6;">
-                                <div class="card-body py-3"><h6 class="fw-bold small">Time in Position</h6><p class="text-muted small mb-0">Analysis of duration employees have held their current positions.</p></div>
+                                <div class="card-body py-3"><h6 class="fw-bold small">Time in Speciality</h6><p class="text-muted small mb-0">Analysis of duration employees have held their current speciality.</p></div>
                             </div>
                         </div>
                     </div>

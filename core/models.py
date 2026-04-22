@@ -103,6 +103,13 @@ class CadreCategory(models.Model):
 
 
 class Position(models.Model):
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   In the UI this model is labelled "Speciality" / "Specialities".
+    #   The model name (Position) and all field names are intentionally
+    #   left unchanged so no migrations are required.  Only form labels,
+    #   template headings, and view page-titles use the new term.
+    # ─────────────────────────────────────────────────────────────────────────
     name = models.CharField(max_length=200)
     cadre_category = models.ForeignKey(CadreCategory, on_delete=models.CASCADE, related_name='positions')
     description = models.TextField(blank=True)
@@ -138,8 +145,14 @@ ENTITY_CHOICES = [
 
 
 class JobRank(models.Model):
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   In the UI this model is labelled "Position" / "Positions".
+    #   The "code" field is labelled "Scale" in the UI.
+    #   Model and field names are left unchanged — no migrations needed.
+    # ─────────────────────────────────────────────────────────────────────────
     name = models.CharField(max_length=200)
-    code = models.CharField(max_length=20)
+    code = models.CharField(max_length=20)  # displayed in UI as "Scale"
     cadre_category = models.ForeignKey(CadreCategory, null=True, blank=True, on_delete=models.SET_NULL, related_name='job_ranks')
     entity_type = models.CharField(max_length=20, choices=ENTITY_CHOICES, default='all')
     description = models.TextField(blank=True)

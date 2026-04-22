@@ -16,6 +16,13 @@ from .forms import (EmployeeBioForm, EmployeeWorkForm, EmployeeCreateForm,
                     EmploymentHistoryForm, QualificationForm, CertificationForm,
                     PublicationForm, EventSeminarForm, MagicLinkForm, DeploymentForm)
 from core.models import Ministry, Agency, GovernmentDepartment, District, CadreCategory, Position, JobRank, SystemSettings
+# ─────────────────────────────────────────────────────────────────────────────
+# UI RENAME NOTE (maintainers):
+#   "Position" model / "position" field  → displayed as "Speciality" in the UI
+#   "JobRank"  model / "job_rank" field  → displayed as "Position"   in the UI
+#   "JobRank.code" field                 → displayed as "Scale"       in the UI
+#   All underlying field/model names remain unchanged to avoid migrations.
+# ─────────────────────────────────────────────────────────────────────────────
 
 User = get_user_model()
 

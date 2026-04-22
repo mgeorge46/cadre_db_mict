@@ -49,6 +49,13 @@ class EmployeeBioForm(forms.ModelForm):
 
 
 class EmployeeWorkForm(forms.ModelForm):
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   Model field "position"  → displayed in UI as "Speciality"
+    #   Model field "job_rank"  → displayed in UI as "Position"
+    #   Model field "date_joined_position" → "Date Joined Speciality" in UI
+    #   The model/field names are unchanged — only labels differ.
+    # ─────────────────────────────────────────────────────────────────────────
     class Meta:
         model = Employee
         fields = [
@@ -58,6 +65,11 @@ class EmployeeWorkForm(forms.ModelForm):
             'work_location', 'date_joined_position', 'date_joined_ministry',
             'contract_end_date', 'roles',
         ]
+        labels = {
+            'position': 'Speciality',               # UI rename: model field stays "position"
+            'job_rank': 'Position',                 # UI rename: model field stays "job_rank"
+            'date_joined_position': 'Date Joined Speciality',  # follows position rename
+        }
         widgets = {
             'date_joined_position': forms.DateInput(attrs={**W, 'type': 'date'}),
             'date_joined_ministry': forms.DateInput(attrs={**W, 'type': 'date'}),
@@ -83,8 +95,16 @@ class EmployeeCreateForm(forms.Form):
 
 
 class EmploymentHistoryForm(forms.ModelForm):
-    # Make position_title a dropdown from existing positions
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   "position_title" field → displayed as "Speciality Title" in UI
+    #   "job_rank" field       → displayed as "Position" in UI
+    #   Model/field names are unchanged.
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Make position_title a dropdown from existing positions (model: Position → UI: Speciality)
     position_title = forms.CharField(
+        label='Speciality Title',   # UI rename: underlying data stores position name
         widget=forms.Select(attrs=WS),
         required=True,
     )
@@ -93,6 +113,9 @@ class EmploymentHistoryForm(forms.ModelForm):
         model = EmploymentHistory
         fields = ['position_title', 'entity_type', 'entity_name', 'cadre_category',
                   'job_rank', 'start_date', 'end_date', 'is_current', 'notes']
+        labels = {
+            'job_rank': 'Position',  # UI rename: model field stays "job_rank"
+        }
         widgets = {
             'start_date': forms.DateInput(attrs={**W, 'type': 'date'}),
             'end_date': forms.DateInput(attrs={**W, 'type': 'date'}),
@@ -103,17 +126,17 @@ class EmploymentHistoryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from core.models import Position, CadreCategory, JobRank
-        # Populate position choices
+        # Populate speciality choices (model: Position, UI label: Speciality)
         positions = Position.objects.filter(is_active=True).values_list('name', flat=True).distinct()
-        pos_choices = [('', '-- Select Position --')] + [(p, p) for p in positions]
+        pos_choices = [('', '-- Select Speciality --')] + [(p, p) for p in positions]
         self.fields['position_title'].widget.choices = pos_choices
         # Make cadre_category a dropdown
         categories = CadreCategory.objects.filter(is_active=True).values_list('name', flat=True)
         cat_choices = [('', '-- Select Cadre Category --')] + [(c, c) for c in categories]
         self.fields['cadre_category'].widget = forms.Select(attrs=WS, choices=cat_choices)
-        # Make job_rank a dropdown
+        # Make job_rank a dropdown (model: JobRank, UI label: Position)
         ranks = JobRank.objects.filter(is_active=True).values_list('name', flat=True).distinct()
-        rank_choices = [('', '-- Select Job Rank --')] + [(r, r) for r in ranks]
+        rank_choices = [('', '-- Select Position --')] + [(r, r) for r in ranks]
         self.fields['job_rank'].widget = forms.Select(attrs=WS, choices=rank_choices)
         # Make entity_name a select (will be populated by JS)
         self.fields['entity_name'].widget = forms.Select(attrs=WS, choices=[('', '-- Select Entity --')])
@@ -212,12 +235,21 @@ class EventSeminarForm(forms.ModelForm):
 
 
 class DeploymentForm(forms.ModelForm):
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   "from_position" / "to_position" fields → displayed as "Speciality" in UI
+    #   Model field names stay as "from_position" / "to_position".
+    # ─────────────────────────────────────────────────────────────────────────
     class Meta:
         model = Deployment
         fields = ['transfer_type', 'from_entity_type', 'from_entity_name', 'from_position',
                   'from_cadre_category', 'to_entity_type', 'to_entity_name', 'to_position',
                   'to_cadre_category', 'status', 'effective_date',
                   'end_date', 'reason', 'notes', 'reference_number']
+        labels = {
+            'from_position': 'Speciality',   # UI rename
+            'to_position': 'Speciality',     # UI rename
+        }
         widgets = {
             'effective_date': forms.DateInput(attrs={**W, 'type': 'date'}),
             'end_date': forms.DateInput(attrs={**W, 'type': 'date'}),
@@ -243,9 +275,9 @@ class DeploymentForm(forms.ModelForm):
             if fname != 'from_entity_type':
                 self.fields[fname].widget = forms.TextInput(attrs={**W, 'readonly': 'readonly', 'tabindex': '-1', 'style': 'background:#f1f5f9;'})
 
-        # Make to_position a select from positions
+        # Make to_position a select from positions (model: Position, UI label: Speciality)
         positions = Position.objects.filter(is_active=True)
-        pos_choices = [('', '-- Select Position --')] + [(p.name, p.name) for p in positions]
+        pos_choices = [('', '-- Select Speciality --')] + [(p.name, p.name) for p in positions]
         self.fields['to_position'].widget = forms.Select(attrs=WS, choices=pos_choices)
 
         # Make to_cadre_category a select

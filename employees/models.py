@@ -60,6 +60,14 @@ class Employee(models.Model):
     emergency_contact_relationship = models.CharField(max_length=100, blank=True)
 
     # Work Information
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   Field "position"  (→ core.Position)  is labelled "Speciality" in the UI.
+    #   Field "job_rank"  (→ core.JobRank)   is labelled "Position"   in the UI.
+    #   Field "date_joined_position"         is "Date Joined Speciality" in the UI.
+    #   DO NOT rename these fields — it would require a migration and break queries.
+    #   Only form labels, template headings and view page-titles use the new terms.
+    # ─────────────────────────────────────────────────────────────────────────
     employee_type = models.ForeignKey('core.EmployeeType', null=True, blank=True, on_delete=models.SET_NULL)
     entity_type = models.CharField(max_length=20, choices=ENTITY_TYPE_CHOICES, blank=True)
     ministry = models.ForeignKey('core.Ministry', null=True, blank=True, on_delete=models.SET_NULL)
@@ -67,8 +75,8 @@ class Employee(models.Model):
     government_department = models.ForeignKey('core.GovernmentDepartment', null=True, blank=True, on_delete=models.SET_NULL)
     district = models.ForeignKey('core.District', null=True, blank=True, on_delete=models.SET_NULL, related_name='deployed_employees')
     cadre_category = models.ForeignKey('core.CadreCategory', null=True, blank=True, on_delete=models.SET_NULL)
-    position = models.ForeignKey('core.Position', null=True, blank=True, on_delete=models.SET_NULL)
-    job_rank = models.ForeignKey('core.JobRank', null=True, blank=True, on_delete=models.SET_NULL)
+    position = models.ForeignKey('core.Position', null=True, blank=True, on_delete=models.SET_NULL)   # UI: "Speciality"
+    job_rank = models.ForeignKey('core.JobRank', null=True, blank=True, on_delete=models.SET_NULL)    # UI: "Position"
     reporting_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='direct_reports')
     work_location = models.CharField(max_length=300, blank=True)
     date_joined_position = models.DateField(null=True, blank=True)

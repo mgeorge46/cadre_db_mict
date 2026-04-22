@@ -104,9 +104,20 @@ class RoleForm(forms.ModelForm):
 
 
 class JobRankForm(forms.ModelForm):
+    # ─────────────────────────────────────────────────────────────────────────
+    # UI RENAME NOTE (maintainers):
+    #   The database model is called "JobRank" and the field is "job_rank".
+    #   In the UI this is now displayed as "Position".
+    #   The "code" field is displayed in the UI as "Scale".
+    #   Do NOT rename the model/field — only these form labels and templates use
+    #   the new terminology.
+    # ─────────────────────────────────────────────────────────────────────────
     class Meta:
         model = JobRank
         fields = ['name', 'code', 'cadre_category', 'entity_type', 'description', 'level', 'is_active']
+        labels = {
+            'code': 'Scale',        # UI label only — model field remains "code"
+        }
         widgets = {
             'name': forms.TextInput(attrs=WIDGET_ATTRS),
             'code': forms.TextInput(attrs=WIDGET_ATTRS),
