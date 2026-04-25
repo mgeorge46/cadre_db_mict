@@ -648,6 +648,79 @@ def event_delete(request, pk, item_pk):
     return redirect('employees:detail', pk=pk)
 
 
+# ── Bulk Magic Link ──────────────────────────────────────────────────────────
+@admin_required
+def bulk_magic_link(request):
+    """Send profile-update magic links to a filtered set of employees."""
+    from core.models import CadreCategory, Position, JobRank
+    from employees.models import ONBOARDING_STATUS_CHOICES
+
+    # Build filtered queryset from GET params (preview) or POST params (send)
+    params = request.POST if request.method == 'POST' else request.GET
+    qs = Employee.objects.select_related('user', 'cadre_category', 'position', 'job_rank').filter(is_active=True)
+
+    onboarding_status = params.get('onboarding_status', '')
+    completion_lt = params.get('completion_lt', '')
+    entity_type = params.get('entity_type', '')
+    cadre_cat = params.get('cadre_category', '')
+    position_id = params.get('position', '')
+    job_rank_id = params.get('job_rank', '')
+
+    if onboarding_status:
+        qs = qs.filter(onboarding_status=onboarding_status)
+    if completion_lt:
+        try:
+            qs = qs.filter(profile_completion__lt=int(completion_lt))
+        except ValueError:
+            pass
+    if entity_type:
+        qs = qs.filter(entity_type=entity_type)
+    if cadre_cat:
+        qs = qs.filter(cadre_category_id=cadre_cat)
+    if position_id:
+        qs = qs.filter(position_id=position_id)
+    if job_rank_id:
+        qs = qs.filter(job_rank_id=job_rank_id)
+
+    if request.method == 'POST' and params.get('action') == 'send':
+        sys_settings = SystemSettings.get_settings()
+        duration = int(params.get('duration_hours', sys_settings.magic_link_default_duration or 48))
+        sections = params.getlist('sections') or ['bio', 'work']
+        expires_at = timezone.now() + timedelta(hours=duration)
+        created_links = []
+        for emp in qs:
+            ml = MagicLink.objects.create(
+                employee=emp, expires_at=expires_at,
+                created_by=request.user, sections=sections
+            )
+            link = request.build_absolute_uri(f'/employees/magic/{ml.token}/')
+            created_links.append({'emp': emp, 'link': link, 'token': ml.token})
+        messages.success(request, f'Magic links created for {len(created_links)} employee(s).')
+        return render(request, 'employees/bulk_magic_link_sent.html', {
+            'created_links': created_links,
+            'page_title': 'Bulk Magic Links Sent',
+        })
+
+    context = {
+        'matched_count': qs.count(),
+        'preview_employees': qs[:10],
+        'onboarding_status_choices': ONBOARDING_STATUS_CHOICES,
+        'cadre_categories': CadreCategory.objects.filter(is_active=True),
+        'positions': Position.objects.filter(is_active=True),
+        'job_ranks': JobRank.objects.filter(is_active=True),
+        # current filter values
+        'sel_onboarding': onboarding_status,
+        'sel_completion_lt': completion_lt,
+        'sel_entity_type': entity_type,
+        'sel_cadre_cat': cadre_cat,
+        'sel_position': position_id,
+        'sel_job_rank': job_rank_id,
+        'page_title': 'Bulk Magic Link',
+        'breadcrumbs': [('Employees', 'employees:list'), ('Bulk Magic Link', None)],
+    }
+    return render(request, 'employees/bulk_magic_link.html', context)
+
+
 # Magic Links
 @admin_required
 def send_magic_link(request, pk):

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-paper-plane me-2 text-primary"></i>{{ page_title }}</h1>
+        <p class="text-muted small mb-0">Filter employees and send profile-update links in bulk.</p>
+    </div>
+    <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back to Employees</a>
+</div>
+
+<div class="row g-4">
+    <!-- Filter panel -->
+    <div class="col-md-4">
+        <div class="card sticky-top" style="top:80px;">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Filter Employees</h6></div>
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Onboarding Status</label>
+                        <select name="onboarding_status" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            {% for val, label in onboarding_status_choices %}
+                            <option value="{{ val }}" {% if sel_onboarding == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Profile Completion below (%)</label>
+                        <input type="number" name="completion_lt" class="form-control form-control-sm" placeholder="e.g. 50" min="0" max="100" value="{{ sel_completion_lt }}">
+                        <div class="form-text">Leave blank to include all</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Entity Type</label>
+                        <select name="entity_type" class="form-select form-select-sm no-select2">
+                            <option value="">All</option>
+                            <option value="ministry" {% if sel_entity_type == 'ministry' %}selected{% endif %}>Ministry</option>
+                            <option value="agency" {% if sel_entity_type == 'agency' %}selected{% endif %}>Agency</option>
+                            <option value="department" {% if sel_entity_type == 'department' %}selected{% endif %}>Department</option>
+                            <option value="local_govt" {% if sel_entity_type == 'local_govt' %}selected{% endif %}>Local Government</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Cadre Category</label>
+                        <select name="cadre_category" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            {% for cat in cadre_categories %}
+                            <option value="{{ cat.pk }}" {% if sel_cadre_cat == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Speciality</label>
+                        <select name="position" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            {% for pos in positions %}
+                            <option value="{{ pos.pk }}" {% if sel_position == pos.pk|stringformat:"s" %}selected{% endif %}>{{ pos.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Position (Rank)</label>
+                        <select name="job_rank" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            {% for jr in job_ranks %}
+                            <option value="{{ jr.pk }}" {% if sel_job_rank == jr.pk|stringformat:"s" %}selected{% endif %}>{{ jr.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="fas fa-search me-1"></i>Preview Matches</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview & Send panel -->
+    <div class="col-md-8">
+        <!-- Match count card -->
+        <div class="stat-card mb-4" style="border-left-color:#1B4F8A;">
+            <div class="stat-icon" style="background:#e8f4fd;color:#1B4F8A;"><i class="fas fa-users"></i></div>
+            <div>
+                <div class="stat-number">{{ matched_count }}</div>
+                <div class="stat-label">Employees match current filters</div>
+            </div>
+        </div>
+
+        {% if matched_count > 0 %}
+        <!-- Send form -->
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-cog me-2"></i>Magic Link Settings</h6></div>
+            <div class="card-body">
+                <form method="post" id="sendForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="send">
+                    <!-- Pass filter values as hidden inputs -->
+                    {% if sel_onboarding %}<input type="hidden" name="onboarding_status" value="{{ sel_onboarding }}">{% endif %}
+                    {% if sel_completion_lt %}<input type="hidden" name="completion_lt" value="{{ sel_completion_lt }}">{% endif %}
+                    {% if sel_entity_type %}<input type="hidden" name="entity_type" value="{{ sel_entity_type }}">{% endif %}
+                    {% if sel_cadre_cat %}<input type="hidden" name="cadre_category" value="{{ sel_cadre_cat }}">{% endif %}
+                    {% if sel_position %}<input type="hidden" name="position" value="{{ sel_position }}">{% endif %}
+                    {% if sel_job_rank %}<input type="hidden" name="job_rank" value="{{ sel_job_rank }}">{% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Link Duration (hours)</label>
+                            <input type="number" name="duration_hours" class="form-control" value="48" min="1" max="720">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Sections to include</label>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="bio" id="secBio" checked><label class="form-check-label small" for="secBio">Bio Data</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="work" id="secWork" checked><label class="form-check-label small" for="secWork">Work Info</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="qualifications" id="secQual"><label class="form-check-label small" for="secQual">Qualifications</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="certifications" id="secCert"><label class="form-check-label small" for="secCert">Certifications</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="publications" id="secPub"><label class="form-check-label small" for="secPub">Publications</label></div>
+                                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sections" value="events" id="secEv"><label class="form-check-label small" for="secEv">Events</label></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Send magic links to {{ matched_count }} employee(s)?')">
+                            <i class="fas fa-paper-plane me-1"></i>Send to {{ matched_count }} Employee{{ matched_count|pluralize }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Preview table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-eye me-2"></i>Preview (first 10 of {{ matched_count }})</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Name</th><th>Emp. No.</th><th>Entity</th><th>Cadre</th><th>Onboarding</th><th class="text-center">Profile %</th></tr></thead>
+                        <tbody>
+                            {% for emp in preview_employees %}
+                            <tr>
+                                <td><a href="{% url 'employees:detail' emp.pk %}" class="text-decoration-none fw-semibold small">{{ emp.user.get_full_name }}</a></td>
+                                <td class="small"><code>{{ emp.employee_number }}</code></td>
+                                <td class="small">{{ emp.get_entity_name }}</td>
+                                <td class="small">{{ emp.cadre_category.name|default:"—" }}</td>
+                                <td>
+                                    {% if emp.onboarding_status == 'not_set' %}<span class="badge bg-secondary" style="font-size:10px;">Not Set</span>
+                                    {% elif emp.onboarding_status == 'parenting' %}<span class="badge bg-info text-dark" style="font-size:10px;">Parenting</span>
+                                    {% else %}<span class="badge bg-warning text-dark" style="font-size:10px;">Redesignation</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <small class="{% if emp.profile_completion < 50 %}text-danger{% elif emp.profile_completion < 80 %}text-warning{% else %}text-success{% endif %} fw-semibold">
+                                        {{ emp.profile_completion }}%
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card"><div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-filter" style="font-size:32px;opacity:0.3;"></i>
+            <p class="mt-2">No employees match the current filters. Adjust filters and preview again.</p>
+        </div></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

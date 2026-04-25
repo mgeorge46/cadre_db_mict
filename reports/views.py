@@ -46,6 +46,18 @@ def reports_preview(request):
     report_type = request.GET.get('report_type', 'employee_list')
     employees = get_filtered_employees(request)
 
+    # Apply report-type-specific ordering
+    if report_type == 'profile_completion':
+        employees = employees.order_by('profile_completion')
+    elif report_type == 'onboarding_status':
+        employees = employees.order_by('onboarding_status', 'user__last_name', 'user__first_name')
+    elif report_type == 'time_in_position':
+        employees = employees.filter(date_joined_position__isnull=False).order_by('date_joined_position')
+    elif report_type == 'contract_expiry':
+        employees = employees.filter(contract_end_date__isnull=False).order_by('contract_end_date')
+    elif report_type == 'deployment_by_entity':
+        employees = employees.order_by('entity_type', 'user__last_name')
+
     per_page = request.GET.get('per_page', '50')
     try:
         per_page = int(per_page)
@@ -63,6 +75,7 @@ def reports_preview(request):
     cadre_dist = list(employees.values('cadre_category__name').annotate(count=Count('id')).order_by('-count'))
     entity_dist = list(employees.values('entity_type').annotate(count=Count('id')).order_by('-count'))
     gender_dist = list(employees.values('gender').annotate(count=Count('id')).order_by('-count'))
+    onboarding_dist = list(employees.values('onboarding_status').annotate(count=Count('id')).order_by('-count'))
 
     # Entity type display names
     entity_map = dict(Employee._meta.get_field('entity_type').choices)
@@ -75,6 +88,10 @@ def reports_preview(request):
     for c in cadre_dist:
         c['cadre_category__name'] = c['cadre_category__name'] or 'Unassigned'
 
+    onboarding_label_map = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+    for o in onboarding_dist:
+        o['label'] = onboarding_label_map.get(o['onboarding_status'], o['onboarding_status'] or 'Not Set')
+
     context = {
         'page_title': 'Report Preview',
         'breadcrumbs': [('Reports', 'reports:index'), ('Preview', None)],
@@ -85,6 +102,7 @@ def reports_preview(request):
         'cadre_dist_json': json.dumps(cadre_dist),
         'entity_dist_json': json.dumps(entity_dist),
         'gender_dist_json': json.dumps(gender_dist),
+        'onboarding_dist_json': json.dumps(onboarding_dist),
         'cadre_categories': CadreCategory.objects.filter(is_active=True),
         'positions': Position.objects.filter(is_active=True),
         'job_ranks': JobRank.objects.filter(is_active=True),
@@ -94,6 +112,7 @@ def reports_preview(request):
         'districts': District.objects.filter(is_active=True),
         'employee_types': EmployeeType.objects.filter(is_active=True),
         'query_string': request.GET.urlencode(),
+        'today': timezone.now().date(),
     }
     return render(request, 'reports/reports_preview.html', context)
 
@@ -112,6 +131,10 @@ def get_filtered_employees(request):
     emp_type = request.GET.get('employee_type', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    # New common filters
+    gender = request.GET.get('gender', '')
+    onboarding_status = request.GET.get('onboarding_status', '')
+    completion_lt = request.GET.get('completion_lt', '')
     # Time in position filter
     years_operator = request.GET.get('years_operator', '')
     years_value = request.GET.get('years_value', '')
@@ -135,6 +158,15 @@ def get_filtered_employees(request):
         qs = qs.filter(date_joined_ministry__gte=date_from)
     if date_to:
         qs = qs.filter(date_joined_ministry__lte=date_to)
+    if gender:
+        qs = qs.filter(gender=gender)
+    if onboarding_status:
+        qs = qs.filter(onboarding_status=onboarding_status)
+    if completion_lt:
+        try:
+            qs = qs.filter(profile_completion__lt=int(completion_lt))
+        except (ValueError, TypeError):
+            pass
 
     # Time in position filter (years)
     if years_value and years_operator:
@@ -290,6 +322,7 @@ def export_excel(request):
 
     elif report_type == 'deployment_by_entity':
         ws.title = 'Deployment by Entity'
+        employees = employees.order_by('entity_type', 'user__last_name')
         headers = ['#', 'Employee No.', 'Full Name', 'Entity Type', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Date Joined']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
@@ -306,6 +339,53 @@ def export_excel(request):
             ws.cell(row=row_num, column=7, value=emp.position.name if emp.position else '')
             ws.cell(row=row_num, column=8, value=emp.job_rank.name if emp.job_rank else '')
             ws.cell(row=row_num, column=9, value=str(emp.date_joined_ministry) if emp.date_joined_ministry else '')
+        for col in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 18
+
+    elif report_type == 'onboarding_status':
+        ws.title = 'Onboarding Status'
+        employees = employees.order_by('onboarding_status', 'user__last_name', 'user__first_name')
+        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Onboarding Status', 'Profile %']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+        for row_num, emp in enumerate(employees, 2):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+            ws.cell(row=row_num, column=2, value=emp.employee_number)
+            ws.cell(row=row_num, column=3, value=emp.user.get_full_name())
+            ws.cell(row=row_num, column=4, value=emp.user.email)
+            ws.cell(row=row_num, column=5, value=emp.get_entity_name())
+            ws.cell(row=row_num, column=6, value=emp.cadre_category.name if emp.cadre_category else '')
+            ws.cell(row=row_num, column=7, value=emp.position.name if emp.position else '')
+            ws.cell(row=row_num, column=8, value=onboarding_labels.get(emp.onboarding_status, emp.onboarding_status))
+            ws.cell(row=row_num, column=9, value=f"{emp.profile_completion}%")
+        for col in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 18
+
+    elif report_type == 'profile_completion':
+        ws.title = 'Profile Completion'
+        employees = employees.order_by('profile_completion')
+        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Onboarding Status', 'Profile %']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+        for row_num, emp in enumerate(employees, 2):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+            ws.cell(row=row_num, column=2, value=emp.employee_number)
+            ws.cell(row=row_num, column=3, value=emp.user.get_full_name())
+            ws.cell(row=row_num, column=4, value=emp.user.email)
+            ws.cell(row=row_num, column=5, value=emp.get_entity_name())
+            ws.cell(row=row_num, column=6, value=emp.cadre_category.name if emp.cadre_category else '')
+            ws.cell(row=row_num, column=7, value=emp.position.name if emp.position else '')
+            ws.cell(row=row_num, column=8, value=emp.job_rank.name if emp.job_rank else '')
+            ws.cell(row=row_num, column=9, value=onboarding_labels.get(emp.onboarding_status, emp.onboarding_status))
+            ws.cell(row=row_num, column=10, value=emp.profile_completion)
         for col in range(1, len(headers) + 1):
             ws.column_dimensions[get_column_letter(col)].width = 18
 

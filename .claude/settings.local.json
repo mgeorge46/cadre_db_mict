@@ -39,7 +39,11 @@
       "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py check)",
       "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c \":*)",
       "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py migrate --check)",
-      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c ' *)"
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c ' *)",
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py makemigrations employees --name=\"add_onboarding_status\")",
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py migrate)",
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe manage.py check --deploy)",
+      "Bash(C:/Users/GeorgeMuddu/Envs/moictenv/Scripts/python.exe -c \"import django; import os; os.environ.setdefault\\('DJANGO_SETTINGS_MODULE','moict.settings'\\); django.setup\\(\\); from reports import views; print\\('reports views OK'\\)\")"
     ]
   }
 }

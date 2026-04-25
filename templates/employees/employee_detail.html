@@ -164,6 +164,20 @@
             </div>
             {% endif %}
             <div class="col-md-3"><div class="text-muted small">Reporting To</div><div class="fw-semibold">{{ emp.reporting_to.user.get_full_name|default:"—" }}</div></div>
+            <div class="col-md-3">
+                <div class="text-muted small">Onboarding Status</div>
+                <div class="fw-semibold">
+                    {% if emp.onboarding_status == 'not_set' %}
+                        <span class="badge bg-secondary">Not Set</span>
+                    {% elif emp.onboarding_status == 'parenting' %}
+                        <span class="badge bg-info text-dark">Parenting</span>
+                    {% elif emp.onboarding_status == 'redesignation' %}
+                        <span class="badge bg-warning text-dark">Redesignation</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark">{{ emp.get_onboarding_status_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% if emp.roles.exists %}
         <hr>

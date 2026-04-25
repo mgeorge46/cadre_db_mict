@@ -66,7 +66,7 @@
 <!-- Charts Row -->
 {% if total_count > 0 %}
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-pie me-1"></i>By Cadre Category</h6></div>
             <div class="card-body p-2">
@@ -74,7 +74,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-bar me-1"></i>By Entity Type</h6></div>
             <div class="card-body p-2">
@@ -82,11 +82,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
-            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-chart-doughnut me-1"></i>By Gender</h6></div>
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-venus-mars me-1"></i>By Gender</h6></div>
             <div class="card-body p-2">
                 <div class="chart-container"><canvas id="genderChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-user-clock me-1"></i>Onboarding Status</h6></div>
+            <div class="card-body p-2">
+                <div class="chart-container"><canvas id="onboardingChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -113,6 +121,18 @@
 
 <!-- Results Table -->
 <div class="card">
+    <div class="card-header py-2 d-flex align-items-center gap-2">
+        <h6 class="mb-0 fw-bold small">
+            {% if report_type == 'employee_list' %}<i class="fas fa-users me-1"></i>Employee List
+            {% elif report_type == 'onboarding_status' %}<i class="fas fa-user-clock me-1"></i>Onboarding Status
+            {% elif report_type == 'profile_completion' %}<i class="fas fa-tasks me-1"></i>Profile Completion
+            {% elif report_type == 'time_in_position' %}<i class="fas fa-clock me-1"></i>Time in Speciality
+            {% elif report_type == 'deployment_by_entity' %}<i class="fas fa-building me-1"></i>Deployment by Entity
+            {% elif report_type == 'contract_expiry' %}<i class="fas fa-calendar-times me-1"></i>Contract Expiry
+            {% else %}Results{% endif %}
+        </h6>
+        <span class="badge bg-primary ms-1">{{ total_count }} record{{ total_count|pluralize }}</span>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table mb-0">
@@ -121,58 +141,135 @@
                         <th>#</th>
                         <th>Emp. No.</th>
                         <th>Full Name</th>
+                        {% if report_type == 'onboarding_status' %}
+                        <th>Entity</th>
+                        <th>Cadre Category</th>
+                        <th>Speciality</th>
+                        <th>Onboarding Status</th>
+                        <th>Profile %</th>
+                        {% elif report_type == 'profile_completion' %}
+                        <th>Entity</th>
+                        <th>Cadre Category</th>
+                        <th>Speciality</th>
+                        <th>Position</th>
+                        <th>Onboarding Status</th>
+                        <th>Profile Completion</th>
+                        {% elif report_type == 'time_in_position' %}
+                        <th>Entity</th>
+                        <th>Cadre Category</th>
+                        <th>Speciality</th>
+                        <th>Date Joined Speciality</th>
+                        <th>Years in Speciality</th>
+                        {% elif report_type == 'contract_expiry' %}
+                        <th>Entity</th>
+                        <th>Speciality</th>
+                        <th>Emp. Type</th>
+                        <th>Contract End</th>
+                        <th>Days Remaining</th>
+                        {% elif report_type == 'deployment_by_entity' %}
+                        <th>Entity Type</th>
+                        <th>Entity</th>
+                        <th>Cadre Category</th>
+                        <th>Speciality</th>
+                        <th>Position</th>
+                        <th>Date Joined</th>
+                        {% else %}
+                        {# employee_list (default) #}
                         <th>Email</th>
                         <th>Entity Type</th>
                         <th>Entity</th>
                         <th>Cadre Category</th>
                         <th>Speciality</th>
                         <th>Position</th>
-                        <th>Emp. Type</th>
-                        {% if report_type == 'time_in_position' %}
-                        <th>Date Joined Speciality</th>
-                        <th>Years in Speciality</th>
-                        {% elif report_type == 'contract_expiry' %}
-                        <th>Contract End</th>
-                        <th>Days Remaining</th>
-                        {% else %}
                         <th>Date Joined</th>
                         <th>Profile %</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% load tz %}
                     {% for emp in page_obj %}
                     <tr>
                         <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
-                        <td><code>{{ emp.employee_number }}</code></td>
+                        <td><code class="small">{{ emp.employee_number }}</code></td>
+                        <td><a href="{% url 'employees:detail' emp.pk %}" class="text-decoration-none fw-semibold small">{{ emp.user.get_full_name }}</a></td>
+
+                        {% if report_type == 'onboarding_status' %}
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
                         <td>
-                            <a href="{% url 'employees:detail' emp.pk %}" class="text-decoration-none fw-semibold">{{ emp.user.get_full_name }}</a>
+                            {% if emp.onboarding_status == 'not_set' %}<span class="badge bg-secondary" style="font-size:10px;">Not Set</span>
+                            {% elif emp.onboarding_status == 'parenting' %}<span class="badge bg-info text-dark" style="font-size:10px;">Parenting</span>
+                            {% elif emp.onboarding_status == 'redesignation' %}<span class="badge bg-warning text-dark" style="font-size:10px;">Redesignation</span>
+                            {% endif %}
                         </td>
-                        <td class="small">{{ emp.user.email }}</td>
-                        <td><span class="badge" style="background:#e8f4fd;color:#1B4F8A;font-size:10px;">{{ emp.get_entity_type_display|default:"--" }}</span></td>
+                        <td>
+                            <div style="min-width:80px;">
+                                <div class="completion-bar"><div class="completion-fill" style="width:{{ emp.profile_completion }}%;"></div></div>
+                                <div style="font-size:10px;text-align:right;color:#64748b;">{{ emp.profile_completion }}%</div>
+                            </div>
+                        </td>
+
+                        {% elif report_type == 'profile_completion' %}
                         <td class="small">{{ emp.get_entity_name }}</td>
                         <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
                         <td class="small">{{ emp.position.name|default:"--" }}</td>
                         <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
-                        <td class="small">{{ emp.employee_type.name|default:"--" }}</td>
-                        {% if report_type == 'time_in_position' %}
+                        <td>
+                            {% if emp.onboarding_status == 'not_set' %}<span class="badge bg-secondary" style="font-size:10px;">Not Set</span>
+                            {% elif emp.onboarding_status == 'parenting' %}<span class="badge bg-info text-dark" style="font-size:10px;">Parenting</span>
+                            {% elif emp.onboarding_status == 'redesignation' %}<span class="badge bg-warning text-dark" style="font-size:10px;">Redesignation</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="min-width:90px;" class="d-flex align-items-center gap-1">
+                                <div class="flex-grow-1">
+                                    <div class="completion-bar"><div class="completion-fill {% if emp.profile_completion < 50 %}bg-danger{% elif emp.profile_completion < 80 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ emp.profile_completion }}%;"></div></div>
+                                </div>
+                                <small class="fw-bold {% if emp.profile_completion < 50 %}text-danger{% elif emp.profile_completion < 80 %}text-warning{% else %}text-success{% endif %}">{{ emp.profile_completion }}%</small>
+                            </div>
+                        </td>
+
+                        {% elif report_type == 'time_in_position' %}
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
                         <td class="small">{{ emp.date_joined_position|date:"M d, Y"|default:"--" }}</td>
                         <td class="small">
                             {% if emp.date_joined_position %}
                                 {{ emp.date_joined_position|timesince }}
                             {% else %}--{% endif %}
                         </td>
+
                         {% elif report_type == 'contract_expiry' %}
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td class="small">{{ emp.employee_type.name|default:"--" }}</td>
                         <td class="small">{{ emp.contract_end_date|date:"M d, Y"|default:"--" }}</td>
                         <td class="small">
                             {% if emp.contract_end_date %}
                                 <span class="badge {% if emp.contract_end_date < today %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                                    {{ emp.contract_end_date|timeuntil }}
+                                    {% if emp.contract_end_date < today %}Expired{% else %}{{ emp.contract_end_date|timeuntil }}{% endif %}
                                 </span>
                             {% else %}--{% endif %}
                         </td>
+
+                        {% elif report_type == 'deployment_by_entity' %}
+                        <td><span class="badge" style="background:#e8f4fd;color:#1B4F8A;font-size:10px;">{{ emp.get_entity_type_display|default:"--" }}</span></td>
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
+                        <td class="small">{{ emp.date_joined_ministry|date:"M d, Y"|default:"--" }}</td>
+
                         {% else %}
+                        {# employee_list default #}
+                        <td class="small">{{ emp.user.email }}</td>
+                        <td><span class="badge" style="background:#e8f4fd;color:#1B4F8A;font-size:10px;">{{ emp.get_entity_type_display|default:"--" }}</span></td>
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
                         <td class="small">{{ emp.date_joined_ministry|date:"M d, Y"|default:"--" }}</td>
                         <td>
                             <div style="width:70px;">
@@ -226,6 +323,13 @@ const COLORS = ['#1B4F8A', '#00897B', '#F39C12', '#8B5CF6', '#E74C3C', '#2ECC71'
 const cadreData = {{ cadre_dist_json|safe }};
 const entityData = {{ entity_dist_json|safe }};
 const genderData = {{ gender_dist_json|safe }};
+const onboardingData = {{ onboarding_dist_json|safe }};
+
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+};
 
 // Cadre Category - Doughnut
 if (cadreData.length > 0) {
@@ -233,18 +337,9 @@ if (cadreData.length > 0) {
         type: 'doughnut',
         data: {
             labels: cadreData.map(d => d.cadre_category__name),
-            datasets: [{
-                data: cadreData.map(d => d.count),
-                backgroundColor: COLORS.slice(0, cadreData.length),
-                borderWidth: 2, borderColor: '#fff'
-            }]
+            datasets: [{ data: cadreData.map(d => d.count), backgroundColor: COLORS.slice(0, cadreData.length), borderWidth: 2, borderColor: '#fff' }]
         },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
-            }
-        }
+        options: chartDefaults
     });
 }
 
@@ -254,20 +349,12 @@ if (entityData.length > 0) {
         type: 'bar',
         data: {
             labels: entityData.map(d => d.entity_type),
-            datasets: [{
-                label: 'Employees',
-                data: entityData.map(d => d.count),
-                backgroundColor: COLORS.slice(0, entityData.length),
-                borderRadius: 6, barThickness: 30
-            }]
+            datasets: [{ label: 'Employees', data: entityData.map(d => d.count), backgroundColor: COLORS.slice(0, entityData.length), borderRadius: 6, barThickness: 30 }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                x: { ticks: { font: { size: 10 } } }
-            }
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } }
         }
     });
 }
@@ -278,18 +365,21 @@ if (genderData.length > 0) {
         type: 'pie',
         data: {
             labels: genderData.map(d => d.gender),
-            datasets: [{
-                data: genderData.map(d => d.count),
-                backgroundColor: ['#1B4F8A', '#F39C12', '#cbd5e1'],
-                borderWidth: 2, borderColor: '#fff'
-            }]
+            datasets: [{ data: genderData.map(d => d.count), backgroundColor: ['#1B4F8A', '#F39C12', '#cbd5e1'], borderWidth: 2, borderColor: '#fff' }]
         },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
-            }
-        }
+        options: chartDefaults
+    });
+}
+
+// Onboarding Status - Doughnut
+if (onboardingData.length > 0) {
+    new Chart(document.getElementById('onboardingChart'), {
+        type: 'doughnut',
+        data: {
+            labels: onboardingData.map(d => d.label),
+            datasets: [{ data: onboardingData.map(d => d.count), backgroundColor: ['#6c757d', '#0dcaf0', '#ffc107'], borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: chartDefaults
     });
 }
 </script>

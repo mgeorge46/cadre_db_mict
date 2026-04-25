@@ -6,6 +6,7 @@ app_name = 'employees'
 urlpatterns = [
     path('', views.employee_list, name='list'),
     path('import/', views.employee_import, name='import'),
+    path('bulk-magic-link/', views.bulk_magic_link, name='bulk_magic_link'),
     path('import/template/', views.employee_import_template, name='import_template'),
     path('import/result/', views.employee_import_result, name='import_result'),
     path('create/', views.employee_create, name='create'),

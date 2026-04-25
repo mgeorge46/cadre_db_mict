@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title"><i class="fas fa-check-circle me-2 text-success"></i>{{ page_title }}</h1>
+        <p class="text-muted small mb-0">{{ created_links|length }} magic link{{ created_links|length|pluralize }} created successfully.</p>
+    </div>
+    <a href="{% url 'employees:bulk_magic_link' %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-paper-plane me-1"></i>Send Another Batch</a>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-list me-2"></i>Generated Links</h6>
+        <button class="btn btn-outline-secondary btn-sm" onclick="copyAll()"><i class="fas fa-copy me-1"></i>Copy All Links</button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr><th>#</th><th>Employee</th><th>Emp. No.</th><th>Magic Link</th><th>Copy</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in created_links %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="fw-semibold small">{{ item.emp.user.get_full_name }}</td>
+                        <td><code class="small">{{ item.emp.employee_number }}</code></td>
+                        <td>
+                            <a href="{{ item.link }}" class="text-decoration-none small link-{{ item.token }}" target="_blank">
+                                {{ item.link|truncatechars:60 }}
+                            </a>
+                        </td>
+                        <td>
+                            <button class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="copyLink('{{ item.link }}')" title="Copy link">
+                                <i class="fas fa-copy" style="font-size:11px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+    <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary"><i class="fas fa-users me-1"></i>Back to Employees</a>
+    <a href="{% url 'employees:bulk_magic_link' %}" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Send Another Batch</a>
+</div>
+
+<textarea id="allLinks" style="position:absolute;left:-9999px;">{% for item in created_links %}{{ item.emp.user.get_full_name }} | {{ item.emp.employee_number }} | {{ item.link }}
+{% endfor %}</textarea>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target.closest('button');
+        btn.innerHTML = '<i class="fas fa-check" style="font-size:11px;color:green;"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy" style="font-size:11px;"></i>'; }, 1500);
+    });
+}
+function copyAll() {
+    const text = document.getElementById('allLinks').value;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('All links copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

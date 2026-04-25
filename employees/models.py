@@ -20,6 +20,12 @@ BLOOD_TYPE_CHOICES = [
 ]
 TITLE_CHOICES = [('Mr', 'Mr'), ('Mrs', 'Mrs'), ('Ms', 'Ms'), ('Dr', 'Dr'), ('Prof', 'Prof')]
 
+ONBOARDING_STATUS_CHOICES = [
+    ('not_set', 'Not Set'),
+    ('parenting', 'Parenting'),
+    ('redesignation', 'Redesignation'),
+]
+
 
 class Employee(models.Model):
     user = models.OneToOneField('accounts.User', on_delete=models.CASCADE, related_name='employee_profile')
@@ -83,6 +89,11 @@ class Employee(models.Model):
     date_joined_ministry = models.DateField(null=True, blank=True)
     contract_end_date = models.DateField(null=True, blank=True)
     roles = models.ManyToManyField('core.Role', blank=True)
+
+    # Onboarding Status — tracks where the employee is in the profile/onboarding process
+    onboarding_status = models.CharField(
+        max_length=20, choices=ONBOARDING_STATUS_CHOICES, default='not_set'
+    )
 
     # System Fields
     profile_completion = models.IntegerField(default=0)

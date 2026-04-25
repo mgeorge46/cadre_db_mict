@@ -63,12 +63,13 @@ class EmployeeWorkForm(forms.ModelForm):
             'ministry', 'agency', 'government_department', 'district',
             'cadre_category', 'position', 'job_rank', 'reporting_to',
             'work_location', 'date_joined_position', 'date_joined_ministry',
-            'contract_end_date', 'roles',
+            'contract_end_date', 'roles', 'onboarding_status',
         ]
         labels = {
             'position': 'Speciality',               # UI rename: model field stays "position"
             'job_rank': 'Position',                 # UI rename: model field stays "job_rank"
             'date_joined_position': 'Date Joined Speciality',  # follows position rename
+            'onboarding_status': 'Onboarding Status',
         }
         widgets = {
             'date_joined_position': forms.DateInput(attrs={**W, 'type': 'date'}),

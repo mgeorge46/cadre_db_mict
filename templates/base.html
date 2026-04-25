@@ -528,6 +528,15 @@
                 </a>
             </div>
 
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <div class="nav-item">
+                <a href="{% url 'employees:bulk_magic_link' %}" class="nav-link {% if 'bulk-magic-link' in request.path %}active{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-paper-plane"></i></span>
+                    <span class="nav-label">Bulk Magic Link</span>
+                </a>
+            </div>
+            {% endif %}
+
             <div class="nav-section-title">MODULES</div>
 
             <div class="nav-item">
