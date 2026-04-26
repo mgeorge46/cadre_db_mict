@@ -129,8 +129,9 @@ class JobRankForm(forms.ModelForm):
 
 
 class SystemSettingsForm(forms.ModelForm):
-    DIRECTORY_FIELD_CHOICES = [
-        ('employee_number', 'Employee Number'),
+    # ── Bio Data fields ──────────────────────────────────────────────────────
+    BIO_FIELD_CHOICES = [
+        ('profile_photo', 'Profile Photo'),
         ('title', 'Title (Mr/Mrs/Dr)'),
         ('gender', 'Gender'),
         ('date_of_birth', 'Date of Birth'),
@@ -138,18 +139,7 @@ class SystemSettingsForm(forms.ModelForm):
         ('phone_primary', 'Primary Phone'),
         ('phone_secondary', 'Secondary Phone'),
         ('personal_email', 'Personal Email'),
-        ('profile_photo', 'Profile Photo'),
-        ('entity_type', 'Entity Type'),
-        ('cadre_category', 'Cadre Category'),
-        ('position', 'Position'),
-        ('job_rank', 'Job Rank'),
-        ('employee_type', 'Employee Type'),
-        ('roles', 'Assigned Roles'),
-        ('work_location', 'Work Location'),
         ('physical_address', 'Physical Address'),
-        ('date_joined_position', 'Date Joined Position'),
-        ('date_joined_ministry', 'Date Joined Ministry/Entity'),
-        ('contract_end_date', 'Contract End Date'),
         ('district_of_origin', 'District of Origin'),
         ('district_of_residence', 'District of Residence'),
         ('marital_status', 'Marital Status'),
@@ -165,11 +155,34 @@ class SystemSettingsForm(forms.ModelForm):
         ('passport_number', 'Passport Number'),
         ('nssf_number', 'NSSF Number'),
         ('tin_number', 'TIN Number'),
+    ]
+    # ── Work Information fields ───────────────────────────────────────────────
+    WORK_FIELD_CHOICES = [
+        ('employee_number', 'Employee Number'),
+        ('employee_type', 'Employee Type'),
+        ('entity_type', 'Entity Type'),
+        ('cadre_category', 'Cadre Category'),
+        ('position', 'Speciality'),
+        ('job_rank', 'Position / Job Rank'),
+        ('roles', 'Assigned Roles'),
+        ('work_location', 'Work Location'),
+        ('date_joined_position', 'Date Joined Speciality'),
+        ('date_joined_ministry', 'Date Joined Ministry/Entity'),
+        ('contract_end_date', 'Contract End Date'),
         ('reporting_to', 'Reporting To'),
         ('profile_completion', 'Profile Completion %'),
+    ]
+    # ── Sections (tab-level access) ──────────────────────────────────────────
+    SECTION_CHOICES = [
+        ('career_history', 'Career History'),
+        ('deployment_history', 'Deployment History'),
         ('qualifications', 'Qualifications'),
         ('certifications', 'Certifications'),
+        ('publications', 'Publications'),
+        ('events', 'Events & Seminars'),
     ]
+
+    DIRECTORY_FIELD_CHOICES = BIO_FIELD_CHOICES + WORK_FIELD_CHOICES + SECTION_CHOICES
 
     directory_visible_fields = forms.MultipleChoiceField(
         choices=DIRECTORY_FIELD_CHOICES,

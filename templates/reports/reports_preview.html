@@ -92,7 +92,7 @@
     </div>
     <div class="col-md-3">
         <div class="card">
-            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-user-clock me-1"></i>Onboarding Status</h6></div>
+            <div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="fas fa-user-clock me-1"></i>Parenting Status</h6></div>
             <div class="card-body p-2">
                 <div class="chart-container"><canvas id="onboardingChart"></canvas></div>
             </div>
@@ -124,7 +124,7 @@
     <div class="card-header py-2 d-flex align-items-center gap-2">
         <h6 class="mb-0 fw-bold small">
             {% if report_type == 'employee_list' %}<i class="fas fa-users me-1"></i>Employee List
-            {% elif report_type == 'onboarding_status' %}<i class="fas fa-user-clock me-1"></i>Onboarding Status
+            {% elif report_type == 'onboarding_status' %}<i class="fas fa-user-clock me-1"></i>Parenting Status
             {% elif report_type == 'profile_completion' %}<i class="fas fa-tasks me-1"></i>Profile Completion
             {% elif report_type == 'time_in_position' %}<i class="fas fa-clock me-1"></i>Time in Speciality
             {% elif report_type == 'deployment_by_entity' %}<i class="fas fa-building me-1"></i>Deployment by Entity
@@ -145,14 +145,14 @@
                         <th>Entity</th>
                         <th>Cadre Category</th>
                         <th>Speciality</th>
-                        <th>Onboarding Status</th>
+                        <th>Parenting Status</th>
                         <th>Profile %</th>
                         {% elif report_type == 'profile_completion' %}
                         <th>Entity</th>
                         <th>Cadre Category</th>
                         <th>Speciality</th>
                         <th>Position</th>
-                        <th>Onboarding Status</th>
+                        <th>Parenting Status</th>
                         <th>Profile Completion</th>
                         {% elif report_type == 'time_in_position' %}
                         <th>Entity</th>
@@ -201,6 +201,7 @@
                             {% if emp.onboarding_status == 'not_set' %}<span class="badge bg-secondary" style="font-size:10px;">Not Set</span>
                             {% elif emp.onboarding_status == 'parenting' %}<span class="badge bg-info text-dark" style="font-size:10px;">Parenting</span>
                             {% elif emp.onboarding_status == 'redesignation' %}<span class="badge bg-warning text-dark" style="font-size:10px;">Redesignation</span>
+                            {% elif emp.onboarding_status == 'both' %}<span class="badge bg-success" style="font-size:10px;">Both</span>
                             {% endif %}
                         </td>
                         <td>
@@ -219,6 +220,7 @@
                             {% if emp.onboarding_status == 'not_set' %}<span class="badge bg-secondary" style="font-size:10px;">Not Set</span>
                             {% elif emp.onboarding_status == 'parenting' %}<span class="badge bg-info text-dark" style="font-size:10px;">Parenting</span>
                             {% elif emp.onboarding_status == 'redesignation' %}<span class="badge bg-warning text-dark" style="font-size:10px;">Redesignation</span>
+                            {% elif emp.onboarding_status == 'both' %}<span class="badge bg-success" style="font-size:10px;">Both</span>
                             {% endif %}
                         </td>
                         <td>
@@ -371,7 +373,7 @@ if (genderData.length > 0) {
     });
 }
 
-// Onboarding Status - Doughnut
+// Parenting Status - Doughnut
 if (onboardingData.length > 0) {
     new Chart(document.getElementById('onboardingChart'), {
         type: 'doughnut',

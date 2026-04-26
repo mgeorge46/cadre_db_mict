@@ -88,7 +88,7 @@ def reports_preview(request):
     for c in cadre_dist:
         c['cadre_category__name'] = c['cadre_category__name'] or 'Unassigned'
 
-    onboarding_label_map = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+    onboarding_label_map = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation', 'both': 'Both'}
     for o in onboarding_dist:
         o['label'] = onboarding_label_map.get(o['onboarding_status'], o['onboarding_status'] or 'Not Set')
 
@@ -343,15 +343,15 @@ def export_excel(request):
             ws.column_dimensions[get_column_letter(col)].width = 18
 
     elif report_type == 'onboarding_status':
-        ws.title = 'Onboarding Status'
+        ws.title = 'Parenting Status'
         employees = employees.order_by('onboarding_status', 'user__last_name', 'user__first_name')
-        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Onboarding Status', 'Profile %']
+        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Parenting Status', 'Profile %']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = Alignment(horizontal='center')
-        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation', 'both': 'Both'}
         for row_num, emp in enumerate(employees, 2):
             ws.cell(row=row_num, column=1, value=row_num - 1)
             ws.cell(row=row_num, column=2, value=emp.employee_number)
@@ -368,13 +368,13 @@ def export_excel(request):
     elif report_type == 'profile_completion':
         ws.title = 'Profile Completion'
         employees = employees.order_by('profile_completion')
-        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Onboarding Status', 'Profile %']
+        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Parenting Status', 'Profile %']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = Alignment(horizontal='center')
-        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation'}
+        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation', 'both': 'Both'}
         for row_num, emp in enumerate(employees, 2):
             ws.cell(row=row_num, column=1, value=row_num - 1)
             ws.cell(row=row_num, column=2, value=emp.employee_number)
@@ -391,7 +391,7 @@ def export_excel(request):
 
     # Title row
     ws.insert_rows(1)
-    title_cell = ws.cell(row=1, column=1, value=f"IT Cadre Tracking Database - {ws.title} Report")
+    title_cell = ws.cell(row=1, column=1, value=f"IT and Communication Cadre Tracking Database - {ws.title} Report")
     title_cell.font = Font(bold=True, size=14)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers) if 'headers' in dir() else 12)
     ws.insert_rows(2)
@@ -427,7 +427,7 @@ def export_pdf(request):
 
     # Title
     title_style = ParagraphStyle('Title', parent=styles['Title'], fontSize=16, textColor=colors.HexColor('#1B4F8A'))
-    elements.append(Paragraph("IT Cadre Tracking Database", title_style))
+    elements.append(Paragraph("IT and Communication Cadre Tracking Database", title_style))
     elements.append(Paragraph("Ministry of ICT and National Guidance, Uganda", styles['Normal']))
     elements.append(Spacer(1, 0.3 * cm))
     elements.append(Paragraph(f"Report: Employee List | Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}",

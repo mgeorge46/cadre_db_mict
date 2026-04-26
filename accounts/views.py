@@ -3,9 +3,13 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 from django.core.paginator import Paginator
 from django.db.models import Q
 from .forms import LoginForm, UserPasswordChangeForm, UserCreateForm, UserEditForm, AdminPasswordChangeForm
+from employees.forms import PasswordResetRequestForm, SetNewPasswordForm
 
 User = get_user_model()
 
@@ -125,6 +129,67 @@ def admin_change_password_view(request, pk):
         "user_obj": user_obj,
         "page_title": f"Change Password: {user_obj.get_full_name()}"
     })
+
+
+def forgot_password_view(request):
+    """Request a password reset. Always shows 'email sent' message to avoid revealing account existence."""
+    if request.user.is_authenticated:
+        return redirect('dashboard:index')
+    form = PasswordResetRequestForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        email = form.cleaned_data['email'].strip().lower()
+        user = User.objects.filter(email__iexact=email).first()
+        if user and user.is_active:
+            # Generate secure token
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = request.build_absolute_uri(f'/accounts/reset-password/{uid}/{token}/')
+            # Try to send email; silently ignore failures
+            try:
+                from django.core.mail import send_mail
+                from core.models import SystemSettings
+                settings_obj = SystemSettings.get_settings()
+                from_name = settings_obj.email_from_name or 'IT Cadre System'
+                send_mail(
+                    subject='Password Reset — IT and Communication Cadre Tracking Database',
+                    message=(
+                        f"Hello {user.get_full_name()},\n\n"
+                        f"You requested a password reset. Click the link below to set a new password:\n\n"
+                        f"{reset_url}\n\n"
+                        f"This link expires in 24 hours.\n\n"
+                        f"If you did not request this, please ignore this email.\n\n"
+                        f"— {from_name}"
+                    ),
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass  # Never reveal errors
+        # Always show the same message — never reveal if email exists
+        return render(request, 'accounts/forgot_password_sent.html', {})
+    return render(request, 'accounts/forgot_password.html', {'form': form})
+
+
+def password_reset_confirm_view(request, uidb64, token):
+    """Confirm password reset with token from email."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is None or not default_token_generator.check_token(user, token):
+        return render(request, 'accounts/password_reset_invalid.html', {})
+
+    form = SetNewPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user.set_password(form.cleaned_data['new_password1'])
+        user.save()
+        messages.success(request, 'Your password has been reset. Please sign in with your new password.')
+        return redirect('accounts:login')
+
+    return render(request, 'accounts/password_reset_confirm.html', {'form': form})
 
 
 @login_required

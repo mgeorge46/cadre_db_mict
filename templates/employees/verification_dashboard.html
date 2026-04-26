@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block title %}Verification Status{% endblock %}
+
+{% block extra_css %}
+<style>
+.verif-badge { display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600; }
+.verif-pending  { background:#fef3c7;color:#92400e; }
+.verif-verified { background:#d1fae5;color:#065f46; }
+.verif-returned { background:#fee2e2;color:#991b1b; }
+.status-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+.dot-verified { background:#059669; }
+.dot-pending  { background:#f59e0b; }
+.dot-returned { background:#dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1 class="page-title"><i class="fas fa-shield-check me-2 text-success"></i>Verification Status</h1>
+        <nav><ol class="breadcrumb"><li class="breadcrumb-item active">Verification Status</li></ol></nav>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card" style="border-left-color:#1B4F8A;">
+            <div class="stat-icon" style="background:#e8f4fd;color:#1B4F8A;"><i class="fas fa-users"></i></div>
+            <div><div class="stat-number">{{ total }}</div><div class="stat-label">Total Active Employees</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card" style="border-left-color:#059669;">
+            <div class="stat-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-circle"></i></div>
+            <div><div class="stat-number">{{ fully_verified }}</div><div class="stat-label">Fully Verified</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card" style="border-left-color:#f59e0b;">
+            <div class="stat-icon" style="background:#fef3c7;color:#f59e0b;"><i class="fas fa-clock"></i></div>
+            <div><div class="stat-number">{{ pending }}</div><div class="stat-label">Pending Review</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card" style="border-left-color:#dc2626;">
+            <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-exclamation-triangle"></i></div>
+            <div><div class="stat-number">{{ returned }}</div><div class="stat-label">Returned to Employee</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification by Entity Summary -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-building me-2"></i>Verification by Entity Type</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Entity Type</th><th class="text-center">Total</th><th class="text-center">Verified</th><th class="text-center">Progress</th></tr></thead>
+                <tbody>
+                {% for e in entity_summary %}
+                <tr>
+                    <td class="fw-semibold small">{{ e.entity_label }}</td>
+                    <td class="text-center small">{{ e.total }}</td>
+                    <td class="text-center small">
+                        <span class="text-success fw-bold">{{ e.verified_count }}</span>
+                        <span class="text-muted">/{{ e.total }}</span>
+                    </td>
+                    <td style="min-width:120px;">
+                        {% if e.total > 0 %}
+                        {% widthratio e.verified_count e.total 100 as pct %}
+                        <div class="completion-bar"><div class="completion-fill" style="width:{{ pct }}%;background:{% if pct == '100' %}#059669{% elif pct|add:0 >= 50 %}#f59e0b{% else %}#dc2626{% endif %};"></div></div>
+                        <div style="font-size:10px;text-align:right;color:#64748b;">{{ pct }}%</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Filters + Bulk Verify -->
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card sticky-top" style="top:80px;">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Filter Employees</h6></div>
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Overall Status</label>
+                        <select name="status_filter" class="form-select form-select-sm no-select2" onchange="this.form.submit()">
+                            <option value="">All Employees</option>
+                            <option value="fully_verified" {% if status_filter == 'fully_verified' %}selected{% endif %}>Fully Verified</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="returned" {% if status_filter == 'returned' %}selected{% endif %}>Returned</option>
+                            <option value="any_returned" {% if status_filter == 'any_returned' %}selected{% endif %}>Any Section Returned</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Entity Type</label>
+                        <select name="entity_type" class="form-select form-select-sm no-select2" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="ministry" {% if entity_type == 'ministry' %}selected{% endif %}>Ministry</option>
+                            <option value="agency" {% if entity_type == 'agency' %}selected{% endif %}>Agency</option>
+                            <option value="department" {% if entity_type == 'department' %}selected{% endif %}>Department</option>
+                            <option value="local_govt" {% if entity_type == 'local_govt' %}selected{% endif %}>Local Government</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Cadre Category</label>
+                        <select name="cadre_category" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            {% for cat in cadre_categories %}
+                            <option value="{{ cat.pk }}" {% if cadre_cat == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <a href="{% url 'employees:verification_dashboard' %}" class="btn btn-outline-secondary btn-sm w-100"><i class="fas fa-times me-1"></i>Clear Filters</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <!-- Bulk Verify Panel -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-tasks me-2"></i>Bulk Verify / Return</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Apply to</label>
+                            <select name="bulk_scope" class="form-select form-select-sm no-select2">
+                                <option value="filtered">Filtered employees ({{ page_obj.paginator.count }})</option>
+                                <option value="all">All active employees ({{ total }})</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Sections</label>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="all" id="secAll" checked><label class="form-check-label small" for="secAll">All</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="bio" id="secBio"><label class="form-check-label small" for="secBio">Bio</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="work" id="secWork"><label class="form-check-label small" for="secWork">Work</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="qual" id="secQual"><label class="form-check-label small" for="secQual">Qual</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="cert" id="secCert"><label class="form-check-label small" for="secCert">Cert</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="pub_events" id="secPub"><label class="form-check-label small" for="secPub">Pub/Events</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="overall" id="secOv"><label class="form-check-label small" for="secOv">Overall</label></div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Set to</label>
+                            <select name="target_status" class="form-select form-select-sm no-select2">
+                                <option value="verified">✓ Verified</option>
+                                <option value="pending">⏳ Pending</option>
+                                <option value="returned">↩ Returned</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Apply bulk verification to selected employees?')">
+                                <i class="fas fa-check me-1"></i>Apply
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Employee Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Employees <span class="badge bg-secondary ms-1">{{ page_obj.paginator.count }}</span></h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+                                <th>Employee</th>
+                                <th>Entity</th>
+                                <th class="text-center">Bio</th>
+                                <th class="text-center">Work</th>
+                                <th class="text-center">Qual</th>
+                                <th class="text-center">Cert</th>
+                                <th class="text-center">Pub/Evts</th>
+                                <th class="text-center">Overall</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for emp in page_obj %}
+                        <tr>
+                            <td><input type="checkbox" name="emp_ids" value="{{ emp.pk }}" class="emp-checkbox"></td>
+                            <td>
+                                <a href="{% url 'employees:detail' emp.pk %}?tab=verification" class="text-decoration-none fw-semibold small">{{ emp.user.get_full_name }}</a>
+                                <div class="text-muted" style="font-size:10px;"><code>{{ emp.employee_number }}</code></div>
+                            </td>
+                            <td class="small">{{ emp.get_entity_name }}</td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.bio_verification_status }}" title="{{ emp.bio_verification_status|capfirst }}"></span></td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.work_verification_status }}" title="{{ emp.work_verification_status|capfirst }}"></span></td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.qual_verification_status }}" title="{{ emp.qual_verification_status|capfirst }}"></span></td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.cert_verification_status }}" title="{{ emp.cert_verification_status|capfirst }}"></span></td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.pub_events_verification_status }}" title="{{ emp.pub_events_verification_status|capfirst }}"></span></td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.overall_verification_status }}" title="{{ emp.overall_verification_status|capfirst }}"></span></td>
+                            <td>
+                                <a href="{% url 'employees:detail' emp.pk %}?tab=verification" class="btn btn-xs btn-outline-primary py-0 px-1" style="font-size:11px;"><i class="fas fa-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="10" class="text-center py-4 text-muted">No employees match the current filters.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-3 d-flex justify-content-center">
+            <ul class="pagination pagination-sm">
+                {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status_filter={{ status_filter }}&entity_type={{ entity_type }}&cadre_category={{ cadre_cat }}">&laquo;</a></li>{% endif %}
+                {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.paginator.num_pages <= 7 or i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+                <li class="page-item {% if i == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ i }}&status_filter={{ status_filter }}&entity_type={{ entity_type }}&cadre_category={{ cadre_cat }}">{{ i }}</a></li>
+                {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status_filter={{ status_filter }}&entity_type={{ entity_type }}&cadre_category={{ cadre_cat }}">&raquo;</a></li>{% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Legend -->
+        <div class="mt-3 d-flex gap-3 text-muted small">
+            <span><span class="status-dot dot-verified"></span> Verified</span>
+            <span><span class="status-dot dot-pending"></span> Pending</span>
+            <span><span class="status-dot dot-returned"></span> Returned</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAll(cb) {
+    document.querySelectorAll('.emp-checkbox').forEach(c => c.checked = cb.checked);
+}
+// When "All" sections checkbox is ticked, uncheck others
+document.getElementById('secAll').addEventListener('change', function() {
+    ['secBio','secWork','secQual','secCert','secPub','secOv'].forEach(id => {
+        document.getElementById(id).checked = false;
+    });
+});
+['secBio','secWork','secQual','secCert','secPub','secOv'].forEach(id => {
+    document.getElementById(id).addEventListener('change', function() {
+        if (this.checked) document.getElementById('secAll').checked = false;
+    });
+});
+</script>
+{% endblock %}

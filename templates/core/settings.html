@@ -19,14 +19,55 @@
                             <div class="form-check mb-2">{{ form.allow_employee_profile_edit }}<label class="form-check-label ms-2">Allow employees to edit their own profiles</label></div>
                             <div class="form-check">{{ form.allow_employees_view_directory }}<label class="form-check-label ms-2">Allow employees to view other employees' profiles (Employee Directory)</label></div>
                             <div id="directoryFieldsSection" class="mt-3 {% if not form.allow_employees_view_directory.value %}d-none{% endif %}">
-                                <label class="form-label fw-semibold small">Visible Fields in Employee Directory</label>
-                                <div class="form-text mb-2">Select which fields non-admin employees can see when viewing other employees in the directory.</div>
-                                <div class="row">
-                                    {% for choice in form.directory_visible_fields %}
-                                    <div class="col-md-4">
-                                        <div class="form-check">{{ choice }}</div>
+                                <label class="form-label fw-semibold small">Visible Fields &amp; Sections in Employee Directory</label>
+                                <div class="form-text mb-3">Select which fields and sections non-admin employees can see when viewing other employees. Sections (Career History, Qualifications, etc.) will appear as separate tabs.</div>
+
+                                {# Render all checkboxes into a JS-accessible hidden container then re-group them via JS #}
+                                <div id="allDirChecks" class="d-none">{% for choice in form.directory_visible_fields %}<span data-val="{{ choice.data.value }}">{{ choice }}</span>{% endfor %}</div>
+
+                                <div class="row g-3" id="dirFieldGroups">
+                                    <!-- Bio Data -->
+                                    <div class="col-12">
+                                        <div class="card border-0" style="background:#f8fafc;">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="fw-semibold small"><i class="fas fa-user me-1 text-primary"></i>Bio Data</span>
+                                                    <a href="#" class="small text-muted select-group-all" data-group="bio">Select all</a>
+                                                </div>
+                                                <div class="row" id="dir-group-bio">
+                                                    {# populated by JS #}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    {% endfor %}
+                                    <!-- Work Information -->
+                                    <div class="col-12">
+                                        <div class="card border-0" style="background:#f8fafc;">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="fw-semibold small"><i class="fas fa-briefcase me-1 text-warning"></i>Work Information</span>
+                                                    <a href="#" class="small text-muted select-group-all" data-group="work">Select all</a>
+                                                </div>
+                                                <div class="row" id="dir-group-work">
+                                                    {# populated by JS #}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Sections -->
+                                    <div class="col-12">
+                                        <div class="card border-0" style="background:#f0fdf4;">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="fw-semibold small"><i class="fas fa-layer-group me-1 text-success"></i>Sections (appear as directory tabs)</span>
+                                                    <a href="#" class="small text-muted select-group-all" data-group="sections">Select all</a>
+                                                </div>
+                                                <div class="row" id="dir-group-sections">
+                                                    {# populated by JS #}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -58,6 +99,7 @@
 
 {% block extra_js %}
 <script>
+// Show/hide directory fields section
 const dirCheck = document.querySelector('[name="allow_employees_view_directory"]');
 const dirSection = document.getElementById('directoryFieldsSection');
 if (dirCheck && dirSection) {
@@ -65,5 +107,59 @@ if (dirCheck && dirSection) {
         dirSection.classList.toggle('d-none', !this.checked);
     });
 }
+
+// ── Group directory field checkboxes by section ───────────────────────────
+const BIO_KEYS = new Set(['profile_photo','title','gender','date_of_birth','nationality',
+    'phone_primary','phone_secondary','personal_email','physical_address',
+    'district_of_origin','district_of_residence','marital_status','religion',
+    'blood_type','has_disability','next_of_kin_name','next_of_kin_phone',
+    'next_of_kin_relationship','emergency_contact_name','emergency_contact_phone',
+    'national_id','passport_number','nssf_number','tin_number']);
+
+const WORK_KEYS = new Set(['employee_number','employee_type','entity_type','cadre_category',
+    'position','job_rank','roles','work_location','date_joined_position',
+    'date_joined_ministry','contract_end_date','reporting_to','profile_completion']);
+
+const SECTION_KEYS = new Set(['career_history','deployment_history',
+    'qualifications','certifications','publications','events']);
+
+function groupDirectoryChecks() {
+    const container = document.getElementById('allDirChecks');
+    if (!container) return;
+    const spans = container.querySelectorAll('span[data-val]');
+    const bioCont = document.getElementById('dir-group-bio');
+    const workCont = document.getElementById('dir-group-work');
+    const secCont = document.getElementById('dir-group-sections');
+
+    spans.forEach(span => {
+        const val = span.dataset.val;
+        const checkDiv = document.createElement('div');
+        checkDiv.className = 'col-md-4';
+        const inner = document.createElement('div');
+        inner.className = 'form-check';
+        inner.innerHTML = span.innerHTML;
+        checkDiv.appendChild(inner);
+        if (BIO_KEYS.has(val)) bioCont.appendChild(checkDiv);
+        else if (WORK_KEYS.has(val)) workCont.appendChild(checkDiv);
+        else if (SECTION_KEYS.has(val)) secCont.appendChild(checkDiv);
+    });
+}
+groupDirectoryChecks();
+
+// Select-all links per group
+document.querySelectorAll('.select-group-all').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const group = this.dataset.group;
+        let cont;
+        if (group === 'bio') cont = document.getElementById('dir-group-bio');
+        else if (group === 'work') cont = document.getElementById('dir-group-work');
+        else cont = document.getElementById('dir-group-sections');
+        const boxes = cont.querySelectorAll('input[type=checkbox]');
+        const allChecked = Array.from(boxes).every(b => b.checked);
+        boxes.forEach(b => b.checked = !allChecked);
+        this.textContent = allChecked ? 'Select all' : 'Deselect all';
+    });
+});
 </script>
 {% endblock %}

@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from .models import Employee, EmploymentHistory, Qualification, Certification, Publication, EventSeminar, MagicLink, Deployment
+from .models import (Employee, EmploymentHistory, Qualification, Certification,
+                     Publication, EventSeminar, MagicLink, Deployment,
+                     ONBOARDING_STATUS_CHOICES, ONBOARDING_STATUS_EMPLOYEE_CHOICES,
+                     VERIFICATION_STATUS_CHOICES)
 
 User = get_user_model()
 W = {'class': 'form-control'}
@@ -69,7 +72,7 @@ class EmployeeWorkForm(forms.ModelForm):
             'position': 'Speciality',               # UI rename: model field stays "position"
             'job_rank': 'Position',                 # UI rename: model field stays "job_rank"
             'date_joined_position': 'Date Joined Speciality',  # follows position rename
-            'onboarding_status': 'Onboarding Status',
+            'onboarding_status': 'Parenting Status',  # UI rename: model field stays "onboarding_status"
         }
         widgets = {
             'date_joined_position': forms.DateInput(attrs={**W, 'type': 'date'}),
@@ -79,12 +82,17 @@ class EmployeeWorkForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Pop optional 'user' kwarg so we can filter choices per role
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.Select) and name not in ('roles',):
                 field.widget.attrs.update(WS)
             elif not isinstance(field.widget, (forms.CheckboxInput, forms.SelectMultiple, forms.Select)):
                 field.widget.attrs.update(W)
+        # Hide "Not Set" from employees (admins & IT admins see all choices)
+        if user and not (getattr(user, 'is_admin', False) or getattr(user, 'is_it_admin', False) or getattr(user, 'is_superuser', False)):
+            self.fields['onboarding_status'].choices = ONBOARDING_STATUS_EMPLOYEE_CHOICES
 
 
 class EmployeeCreateForm(forms.Form):
@@ -312,3 +320,71 @@ class MagicLinkForm(forms.Form):
         initial=['bio', 'work'],
         required=False
     )
+
+
+class VerificationForm(forms.ModelForm):
+    """Admin-only form to set verification statuses for each profile section."""
+    class Meta:
+        model = Employee
+        fields = [
+            'bio_verification_status', 'bio_verification_note',
+            'work_verification_status', 'work_verification_note',
+            'qual_verification_status', 'qual_verification_note',
+            'cert_verification_status', 'cert_verification_note',
+            'pub_events_verification_status', 'pub_events_verification_note',
+            'overall_verification_status', 'overall_verification_note',
+        ]
+        labels = {
+            'bio_verification_status': 'Bio Data Status',
+            'bio_verification_note': 'Bio Rejection Reason (visible to employee)',
+            'work_verification_status': 'Work Info Status',
+            'work_verification_note': 'Work Rejection Reason (visible to employee)',
+            'qual_verification_status': 'Qualifications Status',
+            'qual_verification_note': 'Qualifications Rejection Reason',
+            'cert_verification_status': 'Certifications Status',
+            'cert_verification_note': 'Certifications Rejection Reason',
+            'pub_events_verification_status': 'Publications & Events Status',
+            'pub_events_verification_note': 'Publications & Events Rejection Reason',
+            'overall_verification_status': 'Overall Profile Status',
+            'overall_verification_note': 'Overall Rejection Reason',
+        }
+        widgets = {
+            'bio_verification_status': forms.Select(attrs=WS),
+            'work_verification_status': forms.Select(attrs=WS),
+            'qual_verification_status': forms.Select(attrs=WS),
+            'cert_verification_status': forms.Select(attrs=WS),
+            'pub_events_verification_status': forms.Select(attrs=WS),
+            'overall_verification_status': forms.Select(attrs=WS),
+            'bio_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'work_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'qual_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'cert_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'pub_events_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'overall_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+        }
+
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(
+        label='Email Address',
+        widget=forms.EmailInput(attrs={**W, 'placeholder': 'Enter your registered email'})
+    )
+
+
+class SetNewPasswordForm(forms.Form):
+    new_password1 = forms.CharField(
+        label='New Password', min_length=8,
+        widget=forms.PasswordInput(attrs={**W, 'placeholder': 'At least 8 characters'})
+    )
+    new_password2 = forms.CharField(
+        label='Confirm New Password',
+        widget=forms.PasswordInput(attrs={**W, 'placeholder': 'Repeat new password'})
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('new_password1')
+        p2 = cleaned.get('new_password2')
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError('Passwords do not match.')
+        return cleaned

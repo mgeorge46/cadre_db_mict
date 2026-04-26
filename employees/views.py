@@ -11,10 +11,12 @@ import csv
 import io
 
 from .models import (Employee, EmploymentHistory, Qualification, Certification,
-                     Publication, EventSeminar, MagicLink, BulkMagicLink, Deployment)
+                     Publication, EventSeminar, MagicLink, BulkMagicLink, Deployment,
+                     ONBOARDING_STATUS_CHOICES)
 from .forms import (EmployeeBioForm, EmployeeWorkForm, EmployeeCreateForm,
                     EmploymentHistoryForm, QualificationForm, CertificationForm,
-                    PublicationForm, EventSeminarForm, MagicLinkForm, DeploymentForm)
+                    PublicationForm, EventSeminarForm, MagicLinkForm, DeploymentForm,
+                    VerificationForm)
 from core.models import Ministry, Agency, GovernmentDepartment, District, CadreCategory, Position, JobRank, SystemSettings
 # ─────────────────────────────────────────────────────────────────────────────
 # UI RENAME NOTE (maintainers):
@@ -295,19 +297,41 @@ def employee_import_result(request):
 def employee_detail(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
     is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
-    # Check permission: admin, own profile, or directory viewing enabled
-    if not is_admin:
-        own_profile = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
-        if not own_profile:
-            settings = SystemSettings.get_settings()
-            if not settings.allow_employees_view_directory:
-                messages.error(request, 'Access denied. You can only view your own profile.')
-                return redirect('employees:list')
+    is_own_profile = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+
+    # Permission check
+    if not is_admin and not is_own_profile:
+        settings_obj = SystemSettings.get_settings()
+        if not settings_obj.allow_employees_view_directory:
+            messages.error(request, 'Access denied. You can only view your own profile.')
+            return redirect('employees:list')
+
+    # Data breach protection: when employee views another employee's profile,
+    # only expose the fields the admin has whitelisted in System Settings → directory_visible_fields
+    viewing_another_as_employee = not is_admin and not is_own_profile
+    visible_fields = set()  # empty set means "show everything" (admin / own profile)
+    if viewing_another_as_employee:
+        settings_obj = SystemSettings.get_settings()
+        visible_fields = set(settings_obj.directory_visible_fields or [])
 
     tab = request.GET.get('tab', 'bio')
+    # Verification summary for own-profile accordion
+    verification_summary = [
+        ('Bio Data', emp.bio_verification_status, emp.bio_verification_note),
+        ('Work Information', emp.work_verification_status, emp.work_verification_note),
+        ('Qualifications', emp.qual_verification_status, emp.qual_verification_note),
+        ('Certifications', emp.cert_verification_status, emp.cert_verification_note),
+        ('Publications & Events', emp.pub_events_verification_status, emp.pub_events_verification_note),
+        ('Overall Profile', emp.overall_verification_status, emp.overall_verification_note),
+    ]
+
     context = {
         'emp': emp,
         'tab': tab,
+        'is_admin': is_admin,
+        'is_own_profile': is_own_profile,
+        'viewing_another_as_employee': viewing_another_as_employee,
+        'visible_fields': visible_fields,  # empty = no restriction (admin/own)
         'page_title': emp.user.get_full_name(),
         'breadcrumbs': [('Employees', 'employees:list'), (emp.user.get_full_name(), None)],
         'employment_history': emp.employment_history.all(),
@@ -315,8 +339,10 @@ def employee_detail(request, pk):
         'certifications': emp.certifications.all(),
         'publications': emp.publications.all(),
         'events': emp.events.all(),
-        'magic_links': emp.magic_links.order_by('-created_at')[:10],
+        'magic_links': emp.magic_links.order_by('-created_at')[:10] if is_admin else [],
         'deployments': emp.deployments.all(),
+        'verification_form': VerificationForm(instance=emp) if is_admin else None,
+        'verification_summary': verification_summary,
     }
     return render(request, 'employees/employee_detail.html', context)
 
@@ -378,7 +404,7 @@ def employee_edit_work(request, pk):
     old_job_rank = emp.job_rank
     old_entity_type = emp.entity_type
     old_entity = emp.get_entity_name()
-    form = EmployeeWorkForm(request.POST or None, instance=emp)
+    form = EmployeeWorkForm(request.POST or None, instance=emp, user=request.user)
     if request.method == 'POST' and form.is_valid():
         emp_updated = form.save(commit=False)
         new_position = form.cleaned_data.get('position')
@@ -506,6 +532,13 @@ def employment_history_delete(request, pk, history_pk):
 @login_required
 def qualification_add(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
+    # Only admins or the employee themselves (if self-edit enabled) may add
+    is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    is_own = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+    settings_obj = SystemSettings.get_settings()
+    if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
+        messages.error(request, 'You do not have permission to add qualifications.')
+        return redirect('employees:detail', pk=pk)
     form = QualificationForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         obj = form.save(commit=False)
@@ -553,6 +586,12 @@ def qualification_delete(request, pk, item_pk):
 @login_required
 def certification_add(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
+    is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    is_own = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+    settings_obj = SystemSettings.get_settings()
+    if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
+        messages.error(request, 'You do not have permission to add certifications.')
+        return redirect('employees:detail', pk=pk)
     form = CertificationForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         obj = form.save(commit=False)
@@ -586,6 +625,12 @@ def certification_delete(request, pk, item_pk):
 @login_required
 def publication_add(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
+    is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    is_own = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+    settings_obj = SystemSettings.get_settings()
+    if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
+        messages.error(request, 'You do not have permission to add publications.')
+        return redirect('employees:detail', pk=pk)
     form = PublicationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         obj = form.save(commit=False)
@@ -619,6 +664,12 @@ def publication_delete(request, pk, item_pk):
 @login_required
 def event_add(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
+    is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    is_own = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+    settings_obj = SystemSettings.get_settings()
+    if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
+        messages.error(request, 'You do not have permission to add events.')
+        return redirect('employees:detail', pk=pk)
     form = EventSeminarForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         obj = form.save(commit=False)
@@ -752,33 +803,218 @@ def magic_link_update(request, token):
     if not ml.is_valid:
         return render(request, 'employees/magic_link_expired.html', {'ml': ml})
     emp = ml.employee
-
-    # Section forms
-    bio_form = EmployeeBioForm(instance=emp) if 'bio' in ml.sections else None
-    work_form = EmployeeWorkForm(instance=emp) if 'work' in ml.sections else None
+    sections = ml.sections or []
 
     if request.method == 'POST':
+        section = request.POST.get('section_submit', '')
         saved = False
-        if bio_form and 'bio' in ml.sections:
-            bio_form = EmployeeBioForm(request.POST, request.FILES, instance=emp)
-            if bio_form.is_valid():
-                bio_form.save()
-                saved = True
-        if work_form and 'work' in ml.sections:
-            work_form = EmployeeWorkForm(request.POST, instance=emp)
-            if work_form.is_valid():
-                work_form.save()
-                saved = True
-        if saved:
-            ml.is_used = True
-            ml.used_at = timezone.now()
-            ml.save()
-            messages.success(request, 'Profile updated successfully.')
-            return render(request, 'employees/magic_link_success.html', {'emp': emp})
+        error_form = None
 
-    return render(request, 'employees/magic_link_update.html', {
-        'ml': ml, 'emp': emp, 'bio_form': bio_form, 'work_form': work_form
-    })
+        if section == 'bio' and 'bio' in sections:
+            f = EmployeeBioForm(request.POST, request.FILES, instance=emp)
+            if f.is_valid():
+                f.save()
+                saved = True
+                messages.success(request, 'Bio data saved successfully.')
+            else:
+                error_form = 'bio'
+        elif section == 'work' and 'work' in sections:
+            f = EmployeeWorkForm(request.POST, instance=emp, user=emp.user)
+            if f.is_valid():
+                f.save()
+                saved = True
+                messages.success(request, 'Work information saved successfully.')
+            else:
+                error_form = 'work'
+        elif section == 'qualifications' and 'qualifications' in sections:
+            f = QualificationForm(request.POST, request.FILES)
+            if f.is_valid():
+                q = f.save(commit=False)
+                q.employee = emp
+                q.save()
+                emp.save()  # recalculate profile completion
+                saved = True
+                messages.success(request, 'Qualification added successfully.')
+            else:
+                error_form = 'qualifications'
+        elif section == 'certifications' and 'certifications' in sections:
+            f = CertificationForm(request.POST, request.FILES)
+            if f.is_valid():
+                c = f.save(commit=False)
+                c.employee = emp
+                c.save()
+                saved = True
+                messages.success(request, 'Certification added successfully.')
+            else:
+                error_form = 'certifications'
+        elif section == 'publications' and 'publications' in sections:
+            f = PublicationForm(request.POST)
+            if f.is_valid():
+                p = f.save(commit=False)
+                p.employee = emp
+                p.save()
+                saved = True
+                messages.success(request, 'Publication added successfully.')
+            else:
+                error_form = 'publications'
+        elif section == 'events' and 'events' in sections:
+            f = EventSeminarForm(request.POST, request.FILES)
+            if f.is_valid():
+                e = f.save(commit=False)
+                e.employee = emp
+                e.save()
+                saved = True
+                messages.success(request, 'Event/Seminar added successfully.')
+            else:
+                error_form = 'events'
+
+        if saved:
+            return redirect('employees:magic_link_update', token=token)
+
+    # Build fresh forms for GET (or after save redirect)
+    context = {
+        'ml': ml,
+        'emp': emp,
+        'sections': sections,
+        'bio_form': EmployeeBioForm(instance=emp) if 'bio' in sections else None,
+        'work_form': EmployeeWorkForm(instance=emp, user=emp.user) if 'work' in sections else None,
+        'qual_form': QualificationForm() if 'qualifications' in sections else None,
+        'cert_form': CertificationForm() if 'certifications' in sections else None,
+        'pub_form': PublicationForm() if 'publications' in sections else None,
+        'event_form': EventSeminarForm() if 'events' in sections else None,
+        'qualifications': emp.qualifications.all(),
+        'certifications': emp.certifications.all(),
+        'publications': emp.publications.all(),
+        'events': emp.events.all(),
+    }
+    return render(request, 'employees/magic_link_update.html', context)
+
+
+# ── Verification Views (admin-only) ──────────────────────────────────────────
+@admin_required
+def save_verification(request, pk):
+    """Save verification statuses for one employee (POST only)."""
+    emp = get_object_or_404(Employee, pk=pk)
+    if request.method == 'POST':
+        form = VerificationForm(request.POST, instance=emp)
+        if form.is_valid():
+            v = form.save(commit=False)
+            v.verification_updated_at = timezone.now()
+            v.verification_updated_by = request.user
+            v.save()
+            messages.success(request, f'Verification status updated for {emp.user.get_full_name()}.')
+        else:
+            messages.error(request, 'Please correct the errors in the verification form.')
+    return redirect(f"{request.build_absolute_uri('/employees/' + str(pk) + '/')}?tab=verification")
+
+
+@admin_required
+def verification_dashboard(request):
+    """Dashboard showing all employees' verification statuses with bulk verify."""
+    from django.db.models import Q, Count
+
+    qs = Employee.objects.select_related('user', 'cadre_category', 'position').filter(is_active=True)
+
+    # Filters
+    status_filter = request.GET.get('status_filter', '')
+    entity_type = request.GET.get('entity_type', '')
+    cadre_cat = request.GET.get('cadre_category', '')
+
+    if status_filter == 'fully_verified':
+        qs = qs.filter(overall_verification_status='verified')
+    elif status_filter == 'pending':
+        qs = qs.filter(overall_verification_status='pending')
+    elif status_filter == 'returned':
+        qs = qs.filter(overall_verification_status='returned')
+    elif status_filter == 'any_returned':
+        qs = qs.filter(
+            Q(bio_verification_status='returned') |
+            Q(work_verification_status='returned') |
+            Q(qual_verification_status='returned') |
+            Q(cert_verification_status='returned') |
+            Q(pub_events_verification_status='returned')
+        )
+
+    if entity_type:
+        qs = qs.filter(entity_type=entity_type)
+    if cadre_cat:
+        qs = qs.filter(cadre_category_id=cadre_cat)
+
+    # Bulk verify action
+    if request.method == 'POST':
+        action = request.POST.get('bulk_action', '')
+        sections = request.POST.getlist('bulk_sections')
+        emp_ids = request.POST.getlist('emp_ids')
+        target_status = request.POST.get('target_status', 'verified')
+
+        if emp_ids:
+            target_qs = Employee.objects.filter(pk__in=emp_ids)
+        else:
+            target_qs = qs
+
+        update_kwargs = {
+            'verification_updated_at': timezone.now(),
+            'verification_updated_by': request.user,
+        }
+        if not sections or 'all' in sections:
+            sections = ['bio', 'work', 'qual', 'cert', 'pub_events', 'overall']
+
+        section_map = {
+            'bio': 'bio_verification_status',
+            'work': 'work_verification_status',
+            'qual': 'qual_verification_status',
+            'cert': 'cert_verification_status',
+            'pub_events': 'pub_events_verification_status',
+            'overall': 'overall_verification_status',
+        }
+        for sec in sections:
+            if sec in section_map:
+                update_kwargs[section_map[sec]] = target_status
+
+        count = target_qs.update(**update_kwargs)
+        messages.success(request, f'Updated verification for {count} employee(s).')
+        return redirect('employees:verification_dashboard')
+
+    # Summary stats
+    total = Employee.objects.filter(is_active=True).count()
+    fully_verified = Employee.objects.filter(is_active=True, overall_verification_status='verified').count()
+    pending = Employee.objects.filter(is_active=True, overall_verification_status='pending').count()
+    returned = Employee.objects.filter(is_active=True, overall_verification_status='returned').count()
+
+    # Per entity summary
+    entity_summary = (
+        Employee.objects.filter(is_active=True)
+        .values('entity_type')
+        .annotate(
+            total=Count('id'),
+            verified_count=Count('id', filter=Q(overall_verification_status='verified')),
+        )
+        .order_by('entity_type')
+    )
+    entity_display = dict(Employee._meta.get_field('entity_type').choices)
+    for e in entity_summary:
+        e['entity_label'] = entity_display.get(e['entity_type'], e['entity_type'] or 'N/A')
+
+    per_page = 50
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    from core.models import CadreCategory as CC
+    context = {
+        'page_title': 'Verification Status',
+        'breadcrumbs': [('Employees', 'employees:list'), ('Verification Status', None)],
+        'page_obj': page_obj,
+        'total': total,
+        'fully_verified': fully_verified,
+        'pending': pending,
+        'returned': returned,
+        'entity_summary': entity_summary,
+        'cadre_categories': CC.objects.filter(is_active=True),
+        'status_filter': status_filter,
+        'entity_type': entity_type,
+        'cadre_cat': cadre_cat,
+    }
+    return render(request, 'employees/verification_dashboard.html', context)
 
 
 @login_required

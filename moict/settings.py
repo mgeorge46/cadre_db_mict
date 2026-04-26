@@ -1,5 +1,5 @@
 """
-Django settings for moict project - IT Cadre Tracking Database
+Django settings for moict project - IT and Communication Cadre Tracking Database
 Ministry of ICT and National Guidance, Uganda
 """
 
@@ -116,7 +116,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
-DEFAULT_FROM_EMAIL = 'IT Cadre Tracking <noreply@moict.go.ug>'
+DEFAULT_FROM_EMAIL = 'IT and Communication Cadre Tracking <noreply@moict.go.ug>'
 
 # File upload limits
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

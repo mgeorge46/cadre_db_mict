@@ -20,10 +20,30 @@ BLOOD_TYPE_CHOICES = [
 ]
 TITLE_CHOICES = [('Mr', 'Mr'), ('Mrs', 'Mrs'), ('Ms', 'Ms'), ('Dr', 'Dr'), ('Prof', 'Prof')]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# UI RENAME NOTE (maintainers):
+#   This field is labelled "Parenting Status" in the UI (previously "Onboarding Status").
+#   The model field name "onboarding_status" is unchanged — no migration needed for the rename.
+#   "Not Set" is visible to admins only; employees only see Parenting/Redesignation/Both.
+# ─────────────────────────────────────────────────────────────────────────────
 ONBOARDING_STATUS_CHOICES = [
-    ('not_set', 'Not Set'),
-    ('parenting', 'Parenting'),
+    ('not_set', 'Not Set'),          # admin-visible only
+    ('parenting', 'Parented'),
     ('redesignation', 'Redesignation'),
+    ('both', 'Both'),                # Parenting + Redesignation
+]
+
+# Choices exposed to employees (excludes "Not Set")
+ONBOARDING_STATUS_EMPLOYEE_CHOICES = [
+    ('parenting', 'Parented'),
+    ('redesignation', 'Redesignation'),
+    ('both', 'Both'),
+]
+
+VERIFICATION_STATUS_CHOICES = [
+    ('pending', 'Pending Review'),
+    ('verified', 'Verified'),
+    ('returned', 'Returned to Employee'),
 ]
 
 
@@ -90,10 +110,49 @@ class Employee(models.Model):
     contract_end_date = models.DateField(null=True, blank=True)
     roles = models.ManyToManyField('core.Role', blank=True)
 
-    # Onboarding Status — tracks where the employee is in the profile/onboarding process
+    # Parenting Status (previously "Onboarding Status") — tracks employee profile/onboarding state
+    # UI label: "Parenting Status"  |  "Not Set" shown to admins only
     onboarding_status = models.CharField(
         max_length=20, choices=ONBOARDING_STATUS_CHOICES, default='not_set'
     )
+
+    # ── Profile Section Verification (admin-editable; employee can view their own) ──────────────
+    bio_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Bio Data Verification'
+    )
+    bio_verification_note = models.TextField(blank=True, verbose_name='Bio Rejection Reason')
+    work_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Work Info Verification'
+    )
+    work_verification_note = models.TextField(blank=True, verbose_name='Work Rejection Reason')
+    qual_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Qualifications Verification'
+    )
+    qual_verification_note = models.TextField(blank=True, verbose_name='Qualifications Rejection Reason')
+    cert_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Certifications Verification'
+    )
+    cert_verification_note = models.TextField(blank=True, verbose_name='Certifications Rejection Reason')
+    pub_events_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Publications & Events Verification'
+    )
+    pub_events_verification_note = models.TextField(blank=True, verbose_name='Publications & Events Rejection Reason')
+    overall_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Overall Profile Verification'
+    )
+    overall_verification_note = models.TextField(blank=True, verbose_name='Overall Rejection Reason')
+    verification_updated_at = models.DateTimeField(null=True, blank=True)
+    verification_updated_by = models.ForeignKey(
+        'accounts.User', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='verifications_done'
+    )
+    # ─────────────────────────────────────────────────────────────────────────
 
     # System Fields
     profile_completion = models.IntegerField(default=0)
