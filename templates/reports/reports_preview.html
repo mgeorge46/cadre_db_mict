@@ -129,6 +129,8 @@
             {% elif report_type == 'time_in_position' %}<i class="fas fa-clock me-1"></i>Time in Speciality
             {% elif report_type == 'deployment_by_entity' %}<i class="fas fa-building me-1"></i>Deployment by Entity
             {% elif report_type == 'contract_expiry' %}<i class="fas fa-calendar-times me-1"></i>Contract Expiry
+            {% elif report_type == 'verification_status' %}<i class="fas fa-shield-check me-1"></i>Verification Status
+            {% elif report_type == 'full_extract' %}<i class="fas fa-database me-1"></i>Full Employee Extract
             {% else %}Results{% endif %}
         </h6>
         <span class="badge bg-primary ms-1">{{ total_count }} record{{ total_count|pluralize }}</span>
@@ -166,6 +168,25 @@
                         <th>Emp. Type</th>
                         <th>Contract End</th>
                         <th>Days Remaining</th>
+                        {% elif report_type == 'verification_status' %}
+                        <th>Entity</th>
+                        <th class="text-center">Bio</th>
+                        <th class="text-center">Work</th>
+                        <th class="text-center">Qual</th>
+                        <th class="text-center">Cert</th>
+                        <th class="text-center">Pub</th>
+                        <th class="text-center">Events</th>
+                        <th class="text-center">Overall</th>
+                        {% elif report_type == 'full_extract' %}
+                        <th>Entity</th>
+                        <th>Cadre</th>
+                        <th>Speciality</th>
+                        <th>Position</th>
+                        <th>Profile %</th>
+                        <th class="text-center">Quals</th>
+                        <th class="text-center">Certs</th>
+                        <th class="text-center">Pubs</th>
+                        <th class="text-center">Events</th>
                         {% elif report_type == 'deployment_by_entity' %}
                         <th>Entity Type</th>
                         <th>Entity</th>
@@ -263,6 +284,76 @@
                         <td class="small">{{ emp.position.name|default:"--" }}</td>
                         <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
                         <td class="small">{{ emp.date_joined_ministry|date:"M d, Y"|default:"--" }}</td>
+
+                        {% elif report_type == 'verification_status' %}
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="text-center">
+                            {% if emp.bio_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.bio_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.work_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.work_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.qual_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.qual_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.cert_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.cert_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.pub_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.pub_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.events_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">✓</span>
+                            {% elif emp.events_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">✗</span>
+                            {% else %}<span class="badge bg-secondary" style="font-size:10px;">–</span>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if emp.overall_verification_status == 'verified' %}<span class="badge bg-success" style="font-size:10px;">Verified</span>
+                            {% elif emp.overall_verification_status == 'returned' %}<span class="badge bg-danger" style="font-size:10px;">Returned</span>
+                            {% else %}<span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>{% endif %}
+                        </td>
+
+                        {% elif report_type == 'full_extract' %}
+                        <td class="small">{{ emp.get_entity_name }}</td>
+                        <td class="small">{{ emp.cadre_category.name|default:"--" }}</td>
+                        <td class="small">{{ emp.position.name|default:"--" }}</td>
+                        <td class="small">{{ emp.job_rank.name|default:"--" }}</td>
+                        <td>
+                            <div style="min-width:80px;">
+                                <div class="completion-bar"><div class="completion-fill {% if emp.profile_completion < 50 %}bg-danger{% elif emp.profile_completion < 80 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ emp.profile_completion }}%;"></div></div>
+                                <div style="font-size:10px;text-align:right;color:#64748b;">{{ emp.profile_completion }}%</div>
+                            </div>
+                        </td>
+                        <td class="text-center small">
+                            {% with q_count=emp.qualifications.count %}
+                            {% if q_count %}<span class="badge bg-primary">{{ q_count }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-center small">
+                            {% with c_count=emp.certifications.count %}
+                            {% if c_count %}<span class="badge bg-info text-dark">{{ c_count }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-center small">
+                            {% with p_count=emp.publications.count %}
+                            {% if p_count %}<span class="badge bg-secondary">{{ p_count }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-center small">
+                            {% with e_count=emp.events.count %}
+                            {% if e_count %}<span class="badge bg-warning text-dark">{{ e_count }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                            {% endwith %}
+                        </td>
 
                         {% else %}
                         {# employee_list default #}

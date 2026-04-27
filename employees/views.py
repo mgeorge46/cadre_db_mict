@@ -315,14 +315,15 @@ def employee_detail(request, pk):
         visible_fields = set(settings_obj.directory_visible_fields or [])
 
     tab = request.GET.get('tab', 'bio')
-    # Verification summary for own-profile accordion
+    # Verification summary for own-profile (split pub/events)
     verification_summary = [
-        ('Bio Data', emp.bio_verification_status, emp.bio_verification_note),
-        ('Work Information', emp.work_verification_status, emp.work_verification_note),
-        ('Qualifications', emp.qual_verification_status, emp.qual_verification_note),
-        ('Certifications', emp.cert_verification_status, emp.cert_verification_note),
-        ('Publications & Events', emp.pub_events_verification_status, emp.pub_events_verification_note),
-        ('Overall Profile', emp.overall_verification_status, emp.overall_verification_note),
+        ('Bio Data',        'bio',    emp.bio_verification_status,    emp.bio_verification_note,    emp.bio_submitted,    emp.bio_locked),
+        ('Work Information','work',   emp.work_verification_status,   emp.work_verification_note,   emp.work_submitted,   emp.work_locked),
+        ('Qualifications',  'qual',   emp.qual_verification_status,   emp.qual_verification_note,   emp.qual_submitted,   emp.qual_locked),
+        ('Certifications',  'cert',   emp.cert_verification_status,   emp.cert_verification_note,   emp.cert_submitted,   emp.cert_locked),
+        ('Publications',    'pub',    emp.pub_verification_status,    emp.pub_verification_note,    emp.pub_submitted,    emp.pub_locked),
+        ('Events & Seminars','events',emp.events_verification_status, emp.events_verification_note, emp.events_submitted, emp.events_locked),
+        ('Overall Profile', 'overall',emp.overall_verification_status,emp.overall_verification_note,False,               False),
     ]
 
     context = {
@@ -331,16 +332,16 @@ def employee_detail(request, pk):
         'is_admin': is_admin,
         'is_own_profile': is_own_profile,
         'viewing_another_as_employee': viewing_another_as_employee,
-        'visible_fields': visible_fields,  # empty = no restriction (admin/own)
+        'visible_fields': visible_fields,
         'page_title': emp.user.get_full_name(),
         'breadcrumbs': [('Employees', 'employees:list'), (emp.user.get_full_name(), None)],
-        'employment_history': emp.employment_history.all(),
+        'employment_history': emp.employment_history.order_by('-start_date'),
         'qualifications': emp.qualifications.all(),
         'certifications': emp.certifications.all(),
         'publications': emp.publications.all(),
         'events': emp.events.all(),
         'magic_links': emp.magic_links.order_by('-created_at')[:10] if is_admin else [],
-        'deployments': emp.deployments.all(),
+        'deployments': emp.deployments.order_by('-effective_date'),
         'verification_form': VerificationForm(instance=emp) if is_admin else None,
         'verification_summary': verification_summary,
     }
@@ -539,6 +540,9 @@ def qualification_add(request, pk):
     if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
         messages.error(request, 'You do not have permission to add qualifications.')
         return redirect('employees:detail', pk=pk)
+    if not is_admin and is_own and emp.qual_locked:
+        messages.error(request, 'The Qualifications section is currently locked by an administrator.')
+        return redirect('employees:detail', pk=pk)
     form = QualificationForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         obj = form.save(commit=False)
@@ -576,6 +580,9 @@ def qualification_delete(request, pk, item_pk):
         if not (is_own and settings_obj.allow_employee_profile_edit):
             messages.error(request, 'You do not have permission to delete this qualification.')
             return redirect('employees:detail', pk=pk)
+        if emp.qual_locked:
+            messages.error(request, 'The Qualifications section is currently locked by an administrator.')
+            return redirect('employees:detail', pk=pk)
     if request.method == 'POST':
         obj.delete()
         messages.success(request, 'Qualification deleted.')
@@ -591,6 +598,9 @@ def certification_add(request, pk):
     settings_obj = SystemSettings.get_settings()
     if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
         messages.error(request, 'You do not have permission to add certifications.')
+        return redirect('employees:detail', pk=pk)
+    if not is_admin and is_own and emp.cert_locked:
+        messages.error(request, 'The Certifications section is currently locked by an administrator.')
         return redirect('employees:detail', pk=pk)
     form = CertificationForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -615,6 +625,9 @@ def certification_delete(request, pk, item_pk):
         if not (is_own and settings_obj.allow_employee_profile_edit):
             messages.error(request, 'You do not have permission to delete this certification.')
             return redirect('employees:detail', pk=pk)
+        if emp.cert_locked:
+            messages.error(request, 'The Certifications section is currently locked by an administrator.')
+            return redirect('employees:detail', pk=pk)
     if request.method == 'POST':
         obj.delete()
         messages.success(request, 'Certification deleted.')
@@ -630,6 +643,9 @@ def publication_add(request, pk):
     settings_obj = SystemSettings.get_settings()
     if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
         messages.error(request, 'You do not have permission to add publications.')
+        return redirect('employees:detail', pk=pk)
+    if not is_admin and is_own and emp.pub_locked:
+        messages.error(request, 'The Publications section is currently locked by an administrator.')
         return redirect('employees:detail', pk=pk)
     form = PublicationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -654,6 +670,9 @@ def publication_delete(request, pk, item_pk):
         if not (is_own and settings_obj.allow_employee_profile_edit):
             messages.error(request, 'You do not have permission to delete this publication.')
             return redirect('employees:detail', pk=pk)
+        if emp.pub_locked:
+            messages.error(request, 'The Publications section is currently locked by an administrator.')
+            return redirect('employees:detail', pk=pk)
     if request.method == 'POST':
         obj.delete()
         messages.success(request, 'Publication deleted.')
@@ -669,6 +688,9 @@ def event_add(request, pk):
     settings_obj = SystemSettings.get_settings()
     if not is_admin and not (is_own and settings_obj.allow_employee_profile_edit):
         messages.error(request, 'You do not have permission to add events.')
+        return redirect('employees:detail', pk=pk)
+    if not is_admin and is_own and emp.events_locked:
+        messages.error(request, 'The Events & Seminars section is currently locked by an administrator.')
         return redirect('employees:detail', pk=pk)
     form = EventSeminarForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -692,6 +714,9 @@ def event_delete(request, pk, item_pk):
         settings_obj = SystemSettings.get_settings()
         if not (is_own and settings_obj.allow_employee_profile_edit):
             messages.error(request, 'You do not have permission to delete this event.')
+            return redirect('employees:detail', pk=pk)
+        if emp.events_locked:
+            messages.error(request, 'The Events & Seminars section is currently locked by an administrator.')
             return redirect('employees:detail', pk=pk)
     if request.method == 'POST':
         obj.delete()
@@ -932,7 +957,13 @@ def verification_dashboard(request):
             Q(work_verification_status='returned') |
             Q(qual_verification_status='returned') |
             Q(cert_verification_status='returned') |
-            Q(pub_events_verification_status='returned')
+            Q(pub_verification_status='returned') |
+            Q(events_verification_status='returned')
+        )
+    elif status_filter == 'submitted':
+        qs = qs.filter(
+            Q(bio_submitted=True) | Q(work_submitted=True) | Q(qual_submitted=True) |
+            Q(cert_submitted=True) | Q(pub_submitted=True) | Q(events_submitted=True)
         )
 
     if entity_type:
@@ -957,19 +988,45 @@ def verification_dashboard(request):
             'verification_updated_by': request.user,
         }
         if not sections or 'all' in sections:
-            sections = ['bio', 'work', 'qual', 'cert', 'pub_events', 'overall']
+            sections = ['bio', 'work', 'qual', 'cert', 'pub', 'events', 'overall']
 
         section_map = {
-            'bio': 'bio_verification_status',
-            'work': 'work_verification_status',
-            'qual': 'qual_verification_status',
-            'cert': 'cert_verification_status',
-            'pub_events': 'pub_events_verification_status',
-            'overall': 'overall_verification_status',
+            'bio':    'bio_verification_status',
+            'work':   'work_verification_status',
+            'qual':   'qual_verification_status',
+            'cert':   'cert_verification_status',
+            'pub':    'pub_verification_status',
+            'events': 'events_verification_status',
+            'overall':'overall_verification_status',
+        }
+        # submitted flags to clear after admin acts on them
+        submitted_clear_map = {
+            'bio': 'bio_submitted', 'work': 'work_submitted',
+            'qual': 'qual_submitted', 'cert': 'cert_submitted',
+            'pub': 'pub_submitted', 'events': 'events_submitted',
         }
         for sec in sections:
             if sec in section_map:
                 update_kwargs[section_map[sec]] = target_status
+                if sec in submitted_clear_map:
+                    update_kwargs[submitted_clear_map[sec]] = False  # clear submitted flag
+
+        # Bulk lock action
+        if action == 'lock':
+            lock_map = {
+                'bio': 'bio_locked', 'work': 'work_locked',
+                'qual': 'qual_locked', 'cert': 'cert_locked',
+                'pub': 'pub_locked', 'events': 'events_locked',
+            }
+            lock_val = request.POST.get('lock_value', 'true') == 'true'
+            update_kwargs = {}
+            for sec in sections:
+                if sec in lock_map:
+                    update_kwargs[lock_map[sec]] = lock_val
+            count = target_qs.update(**update_kwargs)
+            action_label = 'Locked' if lock_val else 'Unlocked'
+            messages.success(request, f'{action_label} {count} employee profile(s).')
+            return redirect('employees:verification_dashboard')
 
         count = target_qs.update(**update_kwargs)
         messages.success(request, f'Updated verification for {count} employee(s).')
@@ -981,6 +1038,23 @@ def verification_dashboard(request):
     pending = Employee.objects.filter(is_active=True, overall_verification_status='pending').count()
     returned = Employee.objects.filter(is_active=True, overall_verification_status='returned').count()
 
+    # Submitted for verification (any section)
+    submitted_count = Employee.objects.filter(is_active=True).filter(
+        Q(bio_submitted=True) | Q(work_submitted=True) | Q(qual_submitted=True) |
+        Q(cert_submitted=True) | Q(pub_submitted=True) | Q(events_submitted=True)
+    ).count()
+
+    # Logged in last 7 days
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    logged_in_7days = User.objects.filter(
+        is_employee=True, last_login__gte=seven_days_ago
+    ).count()
+
+    # Recent logins table (last 20 employees to log in)
+    recent_logins = Employee.objects.filter(
+        is_active=True, user__last_login__isnull=False
+    ).select_related('user').order_by('-user__last_login')[:20]
+
     # Per entity summary
     entity_summary = (
         Employee.objects.filter(is_active=True)
@@ -988,6 +1062,10 @@ def verification_dashboard(request):
         .annotate(
             total=Count('id'),
             verified_count=Count('id', filter=Q(overall_verification_status='verified')),
+            submitted_count=Count('id', filter=(
+                Q(bio_submitted=True) | Q(work_submitted=True) | Q(qual_submitted=True) |
+                Q(cert_submitted=True) | Q(pub_submitted=True) | Q(events_submitted=True)
+            )),
         )
         .order_by('entity_type')
     )
@@ -1008,6 +1086,9 @@ def verification_dashboard(request):
         'fully_verified': fully_verified,
         'pending': pending,
         'returned': returned,
+        'submitted_count': submitted_count,
+        'logged_in_7days': logged_in_7days,
+        'recent_logins': recent_logins,
         'entity_summary': entity_summary,
         'cadre_categories': CC.objects.filter(is_active=True),
         'status_filter': status_filter,
@@ -1015,6 +1096,66 @@ def verification_dashboard(request):
         'cadre_cat': cadre_cat,
     }
     return render(request, 'employees/verification_dashboard.html', context)
+
+
+@login_required
+def submit_for_verification(request, pk):
+    """Employee submits selected profile sections for admin verification."""
+    emp = get_object_or_404(Employee, pk=pk)
+    is_admin = request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    is_own = hasattr(request.user, 'employee_profile') and request.user.employee_profile == emp
+
+    if not is_admin and not is_own:
+        messages.error(request, 'Access denied.')
+        return redirect('employees:detail', pk=pk)
+
+    if request.method == 'POST':
+        sections = request.POST.getlist('sections')
+        if not sections:
+            messages.warning(request, 'Please select at least one section to submit.')
+            return redirect(f'/employees/{pk}/?tab=bio')
+
+        section_flag_map = {
+            'bio': 'bio_submitted', 'work': 'work_submitted',
+            'qual': 'qual_submitted', 'cert': 'cert_submitted',
+            'pub': 'pub_submitted', 'events': 'events_submitted',
+        }
+        updated = []
+        for sec in sections:
+            if sec in section_flag_map:
+                setattr(emp, section_flag_map[sec], True)
+                updated.append(sec)
+        if updated:
+            emp.save(update_fields=[section_flag_map[s] for s in updated])
+            messages.success(request, f'Submitted {len(updated)} section(s) for verification. The admin will review shortly.')
+        return redirect(f'/employees/{pk}/?tab=bio')
+    return redirect('employees:detail', pk=pk)
+
+
+@admin_required
+def toggle_section_lock(request, pk):
+    """Admin locks / unlocks individual profile sections."""
+    emp = get_object_or_404(Employee, pk=pk)
+    if request.method == 'POST':
+        section = request.POST.get('section', '')
+        lock = request.POST.get('lock', 'true') == 'true'
+        lock_map = {
+            'bio': 'bio_locked', 'work': 'work_locked',
+            'qual': 'qual_locked', 'cert': 'cert_locked',
+            'pub': 'pub_locked', 'events': 'events_locked',
+        }
+        if section == 'all':
+            for field in lock_map.values():
+                setattr(emp, field, lock)
+            emp.save(update_fields=list(lock_map.values()))
+            action = 'Locked' if lock else 'Unlocked'
+            messages.success(request, f'All sections {action.lower()} for {emp.user.get_full_name()}.')
+        elif section in lock_map:
+            setattr(emp, lock_map[section], lock)
+            emp.save(update_fields=[lock_map[section]])
+            action = 'Locked' if lock else 'Unlocked'
+            messages.success(request, f'{section.title()} section {action.lower()}.')
+    return redirect(f'/employees/{pk}/?tab=verification')
 
 
 @login_required

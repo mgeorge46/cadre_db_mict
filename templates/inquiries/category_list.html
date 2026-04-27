@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Inquiry Categories{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1 class="page-title"><i class="fas fa-tags me-2 text-primary"></i>Inquiry Categories</h1>
+        <nav><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inquiries:list' %}">Inquiries</a></li>
+            <li class="breadcrumb-item active">Categories</li>
+        </ol></nav>
+    </div>
+    <a href="{% url 'inquiries:list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row g-4">
+    <!-- Add category form -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-plus me-2"></i>Add Category</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description <span class="text-muted">(optional)</span></label>
+                        {{ form.description }}
+                    </div>
+                    <div class="mb-3 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label small">Active</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-save me-1"></i>Add Category</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories list -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Existing Categories <span class="badge bg-secondary ms-1">{{ categories.count }}</span></h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Active</th><th>Inquiries</th><th></th></tr></thead>
+                        <tbody>
+                        {% for cat in categories %}
+                        <tr>
+                            <td class="fw-semibold small">{{ cat.name }}</td>
+                            <td class="text-muted small">{{ cat.description|truncatechars:50|default:"—" }}</td>
+                            <td class="text-center">
+                                {% if cat.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                            </td>
+                            <td class="small text-muted">{{ cat.inquiries.count }}</td>
+                            <td>
+                                <form method="post" action="{% url 'inquiries:category_delete' cat.pk %}" class="d-inline" onsubmit="return confirm('Delete this category?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:11px;"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center py-4 text-muted">No categories yet. Add one using the form.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,8 +4,8 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Inquiry, InquiryResponse, InquiryAttachment
-from .forms import InquiryForm, InquiryResponseForm
+from .models import Inquiry, InquiryResponse, InquiryAttachment, InquiryCategory
+from .forms import InquiryForm, InquiryResponseForm, InquiryCategoryForm
 
 
 @login_required
@@ -144,3 +144,40 @@ def inquiry_create(request):
         'form': form, 'page_title': 'Submit Inquiry',
         'breadcrumbs': [('Inquiries', 'inquiries:list'), ('Submit New', None)]
     })
+
+
+# ── Inquiry Category Management (admin only) ─────────────────────────────────
+def _is_admin(request):
+    return request.user.is_authenticated and (
+        request.user.is_admin or request.user.is_it_admin or request.user.is_superuser
+    )
+
+
+@login_required
+def category_list(request):
+    if not _is_admin(request):
+        messages.error(request, 'Access denied.')
+        return redirect('inquiries:list')
+    categories = InquiryCategory.objects.all()
+    form = InquiryCategoryForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Category added.')
+        return redirect('inquiries:category_list')
+    return render(request, 'inquiries/category_list.html', {
+        'categories': categories, 'form': form,
+        'page_title': 'Inquiry Categories',
+        'breadcrumbs': [('Inquiries', 'inquiries:list'), ('Categories', None)],
+    })
+
+
+@login_required
+def category_delete(request, pk):
+    if not _is_admin(request):
+        messages.error(request, 'Access denied.')
+        return redirect('inquiries:list')
+    cat = get_object_or_404(InquiryCategory, pk=pk)
+    if request.method == 'POST':
+        cat.delete()
+        messages.success(request, 'Category deleted.')
+    return redirect('inquiries:category_list')

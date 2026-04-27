@@ -38,6 +38,8 @@
                                 <option value="time_in_position">Time in Speciality</option>
                                 <option value="deployment_by_entity">Deployment by Entity</option>
                                 <option value="contract_expiry">Contract Expiry</option>
+                                <option value="verification_status">Verification Status</option>
+                                <option value="full_extract">Full Employee Extract</option>
                             </select>
                         </div>
 
@@ -119,6 +121,26 @@
                                 <option value="parenting">Parenting</option>
                                 <option value="redesignation">Redesignation</option>
                                 <option value="both">Both</option>
+                            </select>
+                        </div>
+
+                        <!-- Verification Status -->
+                        <div class="mb-3">
+                            <label class="form-label">Overall Verification</label>
+                            <select name="verification_status" class="form-select no-select2">
+                                <option value="">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="verified">Verified</option>
+                                <option value="returned">Returned</option>
+                            </select>
+                        </div>
+
+                        <!-- Submitted for Verification -->
+                        <div class="mb-3">
+                            <label class="form-label">Submitted for Verification</label>
+                            <select name="submitted_for_verification" class="form-select no-select2">
+                                <option value="">All</option>
+                                <option value="yes">Has Submitted Sections</option>
                             </select>
                         </div>
 
@@ -255,6 +277,16 @@
                     <div class="col-sm-6 col-lg-4">
                         <div class="card h-100" style="border-left:4px solid #00897B;">
                             <div class="card-body py-3"><h6 class="fw-bold small">Contract Expiry</h6><p class="text-muted small mb-0">Contract employees with upcoming contract end dates.</p></div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="card h-100" style="border-left:4px solid #059669;">
+                            <div class="card-body py-3"><h6 class="fw-bold small">Verification Status</h6><p class="text-muted small mb-0">Profile verification overview — verified, pending, and returned sections per employee.</p></div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="card h-100" style="border-left:4px solid #0ea5e9;">
+                            <div class="card-body py-3"><h6 class="fw-bold small">Full Employee Extract</h6><p class="text-muted small mb-0">Complete employee data: bio, work info, qualifications, certifications, publications and events.</p></div>
                         </div>
                     </div>
                 </div>

@@ -137,11 +137,16 @@ class Employee(models.Model):
         verbose_name='Certifications Verification'
     )
     cert_verification_note = models.TextField(blank=True, verbose_name='Certifications Rejection Reason')
-    pub_events_verification_status = models.CharField(
+    pub_verification_status = models.CharField(
         max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
-        verbose_name='Publications & Events Verification'
+        verbose_name='Publications Verification'
     )
-    pub_events_verification_note = models.TextField(blank=True, verbose_name='Publications & Events Rejection Reason')
+    pub_verification_note = models.TextField(blank=True, verbose_name='Publications Rejection Reason')
+    events_verification_status = models.CharField(
+        max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
+        verbose_name='Events & Seminars Verification'
+    )
+    events_verification_note = models.TextField(blank=True, verbose_name='Events & Seminars Rejection Reason')
     overall_verification_status = models.CharField(
         max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending',
         verbose_name='Overall Profile Verification'
@@ -152,6 +157,22 @@ class Employee(models.Model):
         'accounts.User', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='verifications_done'
     )
+
+    # ── "Submit for Verification" flags (set by employee; cleared by admin after review) ─────────
+    bio_submitted = models.BooleanField(default=False, verbose_name='Bio Submitted for Verification')
+    work_submitted = models.BooleanField(default=False, verbose_name='Work Submitted for Verification')
+    qual_submitted = models.BooleanField(default=False, verbose_name='Qualifications Submitted for Verification')
+    cert_submitted = models.BooleanField(default=False, verbose_name='Certifications Submitted for Verification')
+    pub_submitted = models.BooleanField(default=False, verbose_name='Publications Submitted for Verification')
+    events_submitted = models.BooleanField(default=False, verbose_name='Events Submitted for Verification')
+
+    # ── Per-section lock (admin; overrides global allow_employee_profile_edit) ─────────────────
+    bio_locked = models.BooleanField(default=False)
+    work_locked = models.BooleanField(default=False)
+    qual_locked = models.BooleanField(default=False)
+    cert_locked = models.BooleanField(default=False)
+    pub_locked = models.BooleanField(default=False)
+    events_locked = models.BooleanField(default=False)
     # ─────────────────────────────────────────────────────────────────────────
 
     # System Fields

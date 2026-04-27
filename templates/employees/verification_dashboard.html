@@ -7,10 +7,12 @@
 .verif-pending  { background:#fef3c7;color:#92400e; }
 .verif-verified { background:#d1fae5;color:#065f46; }
 .verif-returned { background:#fee2e2;color:#991b1b; }
-.status-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+.status-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
 .dot-verified { background:#059669; }
 .dot-pending  { background:#f59e0b; }
 .dot-returned { background:#dc2626; }
+.dot-locked   { background:#6366f1; }
+.stat-mini { font-size:11px;color:#64748b;margin-top:2px; }
 </style>
 {% endblock %}
 
@@ -22,67 +24,48 @@
     </div>
 </div>
 
-<!-- Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
+<!-- Summary Cards — Row 1: Core stats -->
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-lg-2">
         <div class="stat-card" style="border-left-color:#1B4F8A;">
             <div class="stat-icon" style="background:#e8f4fd;color:#1B4F8A;"><i class="fas fa-users"></i></div>
-            <div><div class="stat-number">{{ total }}</div><div class="stat-label">Total Active Employees</div></div>
+            <div><div class="stat-number">{{ total }}</div><div class="stat-label">Total Active</div></div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-lg-2">
         <div class="stat-card" style="border-left-color:#059669;">
             <div class="stat-icon" style="background:#d1fae5;color:#059669;"><i class="fas fa-check-circle"></i></div>
             <div><div class="stat-number">{{ fully_verified }}</div><div class="stat-label">Fully Verified</div></div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-lg-2">
         <div class="stat-card" style="border-left-color:#f59e0b;">
             <div class="stat-icon" style="background:#fef3c7;color:#f59e0b;"><i class="fas fa-clock"></i></div>
             <div><div class="stat-number">{{ pending }}</div><div class="stat-label">Pending Review</div></div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6 col-lg-2">
         <div class="stat-card" style="border-left-color:#dc2626;">
             <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-exclamation-triangle"></i></div>
-            <div><div class="stat-number">{{ returned }}</div><div class="stat-label">Returned to Employee</div></div>
+            <div><div class="stat-number">{{ returned }}</div><div class="stat-label">Returned</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <div class="stat-card" style="border-left-color:#8b5cf6;">
+            <div class="stat-icon" style="background:#ede9fe;color:#8b5cf6;"><i class="fas fa-paper-plane"></i></div>
+            <div><div class="stat-number">{{ submitted_count }}</div><div class="stat-label">Awaiting Review</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-2">
+        <div class="stat-card" style="border-left-color:#0ea5e9;">
+            <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;"><i class="fas fa-sign-in-alt"></i></div>
+            <div><div class="stat-number">{{ logged_in_7days }}</div><div class="stat-label">Logins (7 days)</div></div>
         </div>
     </div>
 </div>
 
-<!-- Verification by Entity Summary -->
-<div class="card mb-4">
-    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-building me-2"></i>Verification by Entity Type</h6></div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-sm mb-0">
-                <thead><tr><th>Entity Type</th><th class="text-center">Total</th><th class="text-center">Verified</th><th class="text-center">Progress</th></tr></thead>
-                <tbody>
-                {% for e in entity_summary %}
-                <tr>
-                    <td class="fw-semibold small">{{ e.entity_label }}</td>
-                    <td class="text-center small">{{ e.total }}</td>
-                    <td class="text-center small">
-                        <span class="text-success fw-bold">{{ e.verified_count }}</span>
-                        <span class="text-muted">/{{ e.total }}</span>
-                    </td>
-                    <td style="min-width:120px;">
-                        {% if e.total > 0 %}
-                        {% widthratio e.verified_count e.total 100 as pct %}
-                        <div class="completion-bar"><div class="completion-fill" style="width:{{ pct }}%;background:{% if pct == '100' %}#059669{% elif pct|add:0 >= 50 %}#f59e0b{% else %}#dc2626{% endif %};"></div></div>
-                        <div style="font-size:10px;text-align:right;color:#64748b;">{{ pct }}%</div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Filters + Bulk Verify -->
 <div class="row g-4">
+    <!-- Left sidebar: filters -->
     <div class="col-md-3">
         <div class="card sticky-top" style="top:80px;">
             <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Filter Employees</h6></div>
@@ -96,6 +79,7 @@
                             <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                             <option value="returned" {% if status_filter == 'returned' %}selected{% endif %}>Returned</option>
                             <option value="any_returned" {% if status_filter == 'any_returned' %}selected{% endif %}>Any Section Returned</option>
+                            <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted for Review</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -124,7 +108,37 @@
     </div>
 
     <div class="col-md-9">
-        <!-- Bulk Verify Panel -->
+
+        <!-- Verification by Entity Summary -->
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-building me-2"></i>Verification by Entity Type</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Entity</th><th class="text-center">Total</th><th class="text-center">Verified</th><th class="text-center">Submitted</th><th class="text-center">Progress</th></tr></thead>
+                        <tbody>
+                        {% for e in entity_summary %}
+                        <tr>
+                            <td class="fw-semibold small">{{ e.entity_label }}</td>
+                            <td class="text-center small">{{ e.total }}</td>
+                            <td class="text-center small"><span class="text-success fw-bold">{{ e.verified_count }}</span><span class="text-muted">/{{ e.total }}</span></td>
+                            <td class="text-center small"><span class="text-purple fw-bold" style="color:#8b5cf6;">{{ e.submitted_count }}</span></td>
+                            <td style="min-width:120px;">
+                                {% if e.total > 0 %}
+                                {% widthratio e.verified_count e.total 100 as pct %}
+                                <div class="completion-bar"><div class="completion-fill" style="width:{{ pct }}%;background:{% if pct == '100' %}#059669{% elif pct|add:0 >= 50 %}#f59e0b{% else %}#dc2626{% endif %};"></div></div>
+                                <div style="font-size:10px;text-align:right;color:#64748b;">{{ pct }}%</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Verify / Return -->
         <div class="card mb-4 border-success">
             <div class="card-header bg-success text-white py-2">
                 <h6 class="mb-0 fw-bold"><i class="fas fa-tasks me-2"></i>Bulk Verify / Return</h6>
@@ -132,15 +146,16 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
+                    <input type="hidden" name="bulk_action" value="verify">
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small fw-semibold">Apply to</label>
                             <select name="bulk_scope" class="form-select form-select-sm no-select2">
-                                <option value="filtered">Filtered employees ({{ page_obj.paginator.count }})</option>
-                                <option value="all">All active employees ({{ total }})</option>
+                                <option value="filtered">Filtered ({{ page_obj.paginator.count }})</option>
+                                <option value="all">All active ({{ total }})</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-5">
                             <label class="form-label small fw-semibold">Sections</label>
                             <div class="d-flex flex-wrap gap-1 mt-1">
                                 <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="all" id="secAll" checked><label class="form-check-label small" for="secAll">All</label></div>
@@ -148,7 +163,8 @@
                                 <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="work" id="secWork"><label class="form-check-label small" for="secWork">Work</label></div>
                                 <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="qual" id="secQual"><label class="form-check-label small" for="secQual">Qual</label></div>
                                 <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="cert" id="secCert"><label class="form-check-label small" for="secCert">Cert</label></div>
-                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="pub_events" id="secPub"><label class="form-check-label small" for="secPub">Pub/Events</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="pub" id="secPub"><label class="form-check-label small" for="secPub">Pub</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="events" id="secEvents"><label class="form-check-label small" for="secEvents">Events</label></div>
                                 <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="overall" id="secOv"><label class="form-check-label small" for="secOv">Overall</label></div>
                             </div>
                         </div>
@@ -170,8 +186,54 @@
             </div>
         </div>
 
-        <!-- Employee Table -->
-        <div class="card">
+        <!-- Bulk Lock -->
+        <div class="card mb-4 border-danger">
+            <div class="card-header py-2" style="background:#fff5f5;">
+                <h6 class="mb-0 fw-bold text-danger"><i class="fas fa-lock me-2"></i>Bulk Lock / Unlock Profiles</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="bulk_action" value="lock">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Apply to</label>
+                            <select name="bulk_scope" class="form-select form-select-sm no-select2">
+                                <option value="filtered">Filtered ({{ page_obj.paginator.count }})</option>
+                                <option value="all">All active ({{ total }})</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">Sections</label>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="all" id="lkAll" checked><label class="form-check-label small" for="lkAll">All</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="bio" id="lkBio"><label class="form-check-label small" for="lkBio">Bio</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="work" id="lkWork"><label class="form-check-label small" for="lkWork">Work</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="qual" id="lkQual"><label class="form-check-label small" for="lkQual">Qual</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="cert" id="lkCert"><label class="form-check-label small" for="lkCert">Cert</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="pub" id="lkPub"><label class="form-check-label small" for="lkPub">Pub</label></div>
+                                <div class="form-check form-check-inline me-0"><input class="form-check-input" type="checkbox" name="bulk_sections" value="events" id="lkEvents"><label class="form-check-label small" for="lkEvents">Events</label></div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Action</label>
+                            <select name="lock_value" class="form-select form-select-sm no-select2">
+                                <option value="true">🔒 Lock</option>
+                                <option value="false">🔓 Unlock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('Apply bulk lock/unlock?')">
+                                <i class="fas fa-lock me-1"></i>Apply
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Employee Verification Table -->
+        <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold">Employees <span class="badge bg-secondary ms-1">{{ page_obj.paginator.count }}</span></h6>
             </div>
@@ -183,12 +245,13 @@
                                 <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
                                 <th>Employee</th>
                                 <th>Entity</th>
-                                <th class="text-center">Bio</th>
-                                <th class="text-center">Work</th>
-                                <th class="text-center">Qual</th>
-                                <th class="text-center">Cert</th>
-                                <th class="text-center">Pub/Evts</th>
-                                <th class="text-center">Overall</th>
+                                <th class="text-center" title="Bio Data">Bio</th>
+                                <th class="text-center" title="Work Information">Work</th>
+                                <th class="text-center" title="Qualifications">Qual</th>
+                                <th class="text-center" title="Certifications">Cert</th>
+                                <th class="text-center" title="Publications">Pub</th>
+                                <th class="text-center" title="Events & Seminars">Events</th>
+                                <th class="text-center" title="Overall">Overall</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -198,21 +261,46 @@
                             <td><input type="checkbox" name="emp_ids" value="{{ emp.pk }}" class="emp-checkbox"></td>
                             <td>
                                 <a href="{% url 'employees:detail' emp.pk %}?tab=verification" class="text-decoration-none fw-semibold small">{{ emp.user.get_full_name }}</a>
-                                <div class="text-muted" style="font-size:10px;"><code>{{ emp.employee_number }}</code></div>
+                                <div class="text-muted" style="font-size:10px;"><code>{{ emp.employee_number }}</code>
+                                {% if emp.bio_submitted or emp.work_submitted or emp.qual_submitted or emp.cert_submitted or emp.pub_submitted or emp.events_submitted %}
+                                <span class="badge ms-1" style="background:#ede9fe;color:#7c3aed;font-size:9px;"><i class="fas fa-inbox"></i> Submitted</span>
+                                {% endif %}
+                                </div>
                             </td>
                             <td class="small">{{ emp.get_entity_name }}</td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.bio_verification_status }}" title="{{ emp.bio_verification_status|capfirst }}"></span></td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.work_verification_status }}" title="{{ emp.work_verification_status|capfirst }}"></span></td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.qual_verification_status }}" title="{{ emp.qual_verification_status|capfirst }}"></span></td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.cert_verification_status }}" title="{{ emp.cert_verification_status|capfirst }}"></span></td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.pub_events_verification_status }}" title="{{ emp.pub_events_verification_status|capfirst }}"></span></td>
-                            <td class="text-center"><span class="status-dot dot-{{ emp.overall_verification_status }}" title="{{ emp.overall_verification_status|capfirst }}"></span></td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.bio_verification_status }}" title="Bio: {{ emp.bio_verification_status|capfirst }}{% if emp.bio_locked %} 🔒{% endif %}"></span>
+                                {% if emp.bio_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.work_verification_status }}" title="Work: {{ emp.work_verification_status|capfirst }}{% if emp.work_locked %} 🔒{% endif %}"></span>
+                                {% if emp.work_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.qual_verification_status }}" title="Qualifications: {{ emp.qual_verification_status|capfirst }}{% if emp.qual_locked %} 🔒{% endif %}"></span>
+                                {% if emp.qual_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.cert_verification_status }}" title="Certifications: {{ emp.cert_verification_status|capfirst }}{% if emp.cert_locked %} 🔒{% endif %}"></span>
+                                {% if emp.cert_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.pub_verification_status }}" title="Publications: {{ emp.pub_verification_status|capfirst }}{% if emp.pub_locked %} 🔒{% endif %}"></span>
+                                {% if emp.pub_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.events_verification_status }}" title="Events: {{ emp.events_verification_status|capfirst }}{% if emp.events_locked %} 🔒{% endif %}"></span>
+                                {% if emp.events_locked %}<i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="status-dot dot-{{ emp.overall_verification_status }}" title="Overall: {{ emp.overall_verification_status|capfirst }}"></span>
+                            </td>
                             <td>
                                 <a href="{% url 'employees:detail' emp.pk %}?tab=verification" class="btn btn-xs btn-outline-primary py-0 px-1" style="font-size:11px;"><i class="fas fa-edit"></i></a>
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="10" class="text-center py-4 text-muted">No employees match the current filters.</td></tr>
+                        <tr><td colspan="11" class="text-center py-4 text-muted">No employees match the current filters.</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>
@@ -235,11 +323,39 @@
         </nav>
         {% endif %}
 
+        <!-- Recent Logins Table -->
+        <div class="card mt-4">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="fas fa-clock me-2 text-info"></i>Recent Logins <span class="badge bg-secondary ms-1">Last 20</span></h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Employee</th><th>Entity</th><th>Last Login</th><th class="text-center">Overall</th></tr></thead>
+                        <tbody>
+                        {% for emp in recent_logins %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'employees:detail' emp.pk %}?tab=verification" class="text-decoration-none fw-semibold small">{{ emp.user.get_full_name }}</a>
+                                <div style="font-size:10px;color:#94a3b8;"><code>{{ emp.employee_number }}</code></div>
+                            </td>
+                            <td class="small">{{ emp.get_entity_name }}</td>
+                            <td class="small">{{ emp.user.last_login|date:"M d, Y H:i"|default:"—" }}</td>
+                            <td class="text-center"><span class="status-dot dot-{{ emp.overall_verification_status }}"></span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center py-3 text-muted small">No recent logins recorded.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Legend -->
-        <div class="mt-3 d-flex gap-3 text-muted small">
+        <div class="mt-3 d-flex gap-3 text-muted small flex-wrap">
             <span><span class="status-dot dot-verified"></span> Verified</span>
             <span><span class="status-dot dot-pending"></span> Pending</span>
             <span><span class="status-dot dot-returned"></span> Returned</span>
+            <span><i class="fas fa-lock" style="font-size:8px;color:#dc2626;"></i> Locked</span>
         </div>
     </div>
 </div>
@@ -250,15 +366,26 @@
 function toggleAll(cb) {
     document.querySelectorAll('.emp-checkbox').forEach(c => c.checked = cb.checked);
 }
-// When "All" sections checkbox is ticked, uncheck others
+// Verify sections — "All" checkbox logic
 document.getElementById('secAll').addEventListener('change', function() {
-    ['secBio','secWork','secQual','secCert','secPub','secOv'].forEach(id => {
+    ['secBio','secWork','secQual','secCert','secPub','secEvents','secOv'].forEach(id => {
         document.getElementById(id).checked = false;
     });
 });
-['secBio','secWork','secQual','secCert','secPub','secOv'].forEach(id => {
+['secBio','secWork','secQual','secCert','secPub','secEvents','secOv'].forEach(id => {
     document.getElementById(id).addEventListener('change', function() {
         if (this.checked) document.getElementById('secAll').checked = false;
+    });
+});
+// Lock sections — "All" checkbox logic
+document.getElementById('lkAll').addEventListener('change', function() {
+    ['lkBio','lkWork','lkQual','lkCert','lkPub','lkEvents'].forEach(id => {
+        document.getElementById(id).checked = false;
+    });
+});
+['lkBio','lkWork','lkQual','lkCert','lkPub','lkEvents'].forEach(id => {
+    document.getElementById(id).addEventListener('change', function() {
+        if (this.checked) document.getElementById('lkAll').checked = false;
     });
 });
 </script>

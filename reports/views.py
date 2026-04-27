@@ -57,6 +57,10 @@ def reports_preview(request):
         employees = employees.filter(contract_end_date__isnull=False).order_by('contract_end_date')
     elif report_type == 'deployment_by_entity':
         employees = employees.order_by('entity_type', 'user__last_name')
+    elif report_type == 'verification_status':
+        employees = employees.order_by('overall_verification_status', 'user__last_name')
+    elif report_type == 'full_extract':
+        employees = employees.prefetch_related('qualifications', 'certifications', 'publications', 'events').order_by('user__last_name', 'user__first_name')
 
     per_page = request.GET.get('per_page', '50')
     try:
@@ -143,6 +147,9 @@ def get_filtered_employees(request):
     age_value = request.GET.get('age_value', '')
     # Inquiry status filter
     inquiry_status = request.GET.get('inquiry_status', '')
+    # Verification filters
+    verification_status_filter = request.GET.get('verification_status', '')
+    submitted_filter = request.GET.get('submitted_for_verification', '')
 
     if entity_type:
         qs = qs.filter(entity_type=entity_type)
@@ -167,6 +174,13 @@ def get_filtered_employees(request):
             qs = qs.filter(profile_completion__lt=int(completion_lt))
         except (ValueError, TypeError):
             pass
+    if verification_status_filter:
+        qs = qs.filter(overall_verification_status=verification_status_filter)
+    if submitted_filter == 'yes':
+        qs = qs.filter(
+            Q(bio_submitted=True) | Q(work_submitted=True) | Q(qual_submitted=True) |
+            Q(cert_submitted=True) | Q(pub_submitted=True) | Q(events_submitted=True)
+        )
 
     # Time in position filter (years)
     if years_value and years_operator:
@@ -388,6 +402,79 @@ def export_excel(request):
             ws.cell(row=row_num, column=10, value=emp.profile_completion)
         for col in range(1, len(headers) + 1):
             ws.column_dimensions[get_column_letter(col)].width = 18
+
+    elif report_type == 'verification_status':
+        ws.title = 'Verification Status'
+        employees = employees.order_by('overall_verification_status', 'user__last_name')
+        headers = ['#', 'Employee No.', 'Full Name', 'Email', 'Entity', 'Bio', 'Work', 'Qualifications', 'Certifications', 'Publications', 'Events', 'Overall']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+        status_labels = {'pending': 'Pending', 'verified': 'Verified', 'returned': 'Returned'}
+        for row_num, emp in enumerate(employees, 2):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+            ws.cell(row=row_num, column=2, value=emp.employee_number)
+            ws.cell(row=row_num, column=3, value=emp.user.get_full_name())
+            ws.cell(row=row_num, column=4, value=emp.user.email)
+            ws.cell(row=row_num, column=5, value=emp.get_entity_name())
+            ws.cell(row=row_num, column=6, value=status_labels.get(emp.bio_verification_status, emp.bio_verification_status))
+            ws.cell(row=row_num, column=7, value=status_labels.get(emp.work_verification_status, emp.work_verification_status))
+            ws.cell(row=row_num, column=8, value=status_labels.get(emp.qual_verification_status, emp.qual_verification_status))
+            ws.cell(row=row_num, column=9, value=status_labels.get(emp.cert_verification_status, emp.cert_verification_status))
+            ws.cell(row=row_num, column=10, value=status_labels.get(emp.pub_verification_status, emp.pub_verification_status))
+            ws.cell(row=row_num, column=11, value=status_labels.get(emp.events_verification_status, emp.events_verification_status))
+            ws.cell(row=row_num, column=12, value=status_labels.get(emp.overall_verification_status, emp.overall_verification_status))
+        for col in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 16
+
+    elif report_type == 'full_extract':
+        ws.title = 'Full Employee Extract'
+        employees = employees.prefetch_related('qualifications', 'certifications', 'publications', 'events').order_by('user__last_name', 'user__first_name')
+        headers = [
+            '#', 'Employee No.', 'Full Name', 'Email', 'Gender', 'Date of Birth',
+            'Entity Type', 'Entity', 'Cadre Category', 'Speciality', 'Position', 'Employee Type',
+            'Date Joined', 'Parenting Status', 'Profile %',
+            'Qualifications', 'Certifications', 'Publications', 'Events',
+            'Bio Status', 'Work Status', 'Qual Status', 'Cert Status', 'Pub Status', 'Events Status', 'Overall Status',
+        ]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+        onboarding_labels = {'not_set': 'Not Set', 'parenting': 'Parenting', 'redesignation': 'Redesignation', 'both': 'Both'}
+        status_labels = {'pending': 'Pending', 'verified': 'Verified', 'returned': 'Returned'}
+        for row_num, emp in enumerate(employees, 2):
+            ws.cell(row=row_num, column=1, value=row_num - 1)
+            ws.cell(row=row_num, column=2, value=emp.employee_number)
+            ws.cell(row=row_num, column=3, value=emp.user.get_full_name())
+            ws.cell(row=row_num, column=4, value=emp.user.email)
+            ws.cell(row=row_num, column=5, value={'M': 'Male', 'F': 'Female'}.get(emp.gender, ''))
+            ws.cell(row=row_num, column=6, value=str(emp.date_of_birth) if emp.date_of_birth else '')
+            ws.cell(row=row_num, column=7, value=emp.get_entity_type_display() if emp.entity_type else '')
+            ws.cell(row=row_num, column=8, value=emp.get_entity_name())
+            ws.cell(row=row_num, column=9, value=emp.cadre_category.name if emp.cadre_category else '')
+            ws.cell(row=row_num, column=10, value=emp.position.name if emp.position else '')
+            ws.cell(row=row_num, column=11, value=emp.job_rank.name if emp.job_rank else '')
+            ws.cell(row=row_num, column=12, value=emp.employee_type.name if emp.employee_type else '')
+            ws.cell(row=row_num, column=13, value=str(emp.date_joined_ministry) if emp.date_joined_ministry else '')
+            ws.cell(row=row_num, column=14, value=onboarding_labels.get(emp.onboarding_status, emp.onboarding_status))
+            ws.cell(row=row_num, column=15, value=emp.profile_completion)
+            ws.cell(row=row_num, column=16, value=emp.qualifications.count())
+            ws.cell(row=row_num, column=17, value=emp.certifications.count())
+            ws.cell(row=row_num, column=18, value=emp.publications.count())
+            ws.cell(row=row_num, column=19, value=emp.events.count())
+            ws.cell(row=row_num, column=20, value=status_labels.get(emp.bio_verification_status, emp.bio_verification_status))
+            ws.cell(row=row_num, column=21, value=status_labels.get(emp.work_verification_status, emp.work_verification_status))
+            ws.cell(row=row_num, column=22, value=status_labels.get(emp.qual_verification_status, emp.qual_verification_status))
+            ws.cell(row=row_num, column=23, value=status_labels.get(emp.cert_verification_status, emp.cert_verification_status))
+            ws.cell(row=row_num, column=24, value=status_labels.get(emp.pub_verification_status, emp.pub_verification_status))
+            ws.cell(row=row_num, column=25, value=status_labels.get(emp.events_verification_status, emp.events_verification_status))
+            ws.cell(row=row_num, column=26, value=status_labels.get(emp.overall_verification_status, emp.overall_verification_status))
+        for col in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 16
 
     # Title row
     ws.insert_rows(1)

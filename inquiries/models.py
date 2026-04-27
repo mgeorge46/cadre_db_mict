@@ -1,6 +1,20 @@
 from django.db import models
 
 
+class InquiryCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'Inquiry Categories'
+
+    def __str__(self):
+        return self.name
+
+
 STATUS_CHOICES = [
     ('open', 'Open'),
     ('in_progress', 'In Progress'),
@@ -25,7 +39,7 @@ class Inquiry(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     assigned_to = models.ForeignKey('accounts.User', null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_inquiries')
-    category = models.CharField(max_length=100, blank=True)
+    category = models.ForeignKey(InquiryCategory, null=True, blank=True, on_delete=models.SET_NULL, related_name='inquiries')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)

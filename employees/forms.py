@@ -331,7 +331,8 @@ class VerificationForm(forms.ModelForm):
             'work_verification_status', 'work_verification_note',
             'qual_verification_status', 'qual_verification_note',
             'cert_verification_status', 'cert_verification_note',
-            'pub_events_verification_status', 'pub_events_verification_note',
+            'pub_verification_status', 'pub_verification_note',
+            'events_verification_status', 'events_verification_note',
             'overall_verification_status', 'overall_verification_note',
         ]
         labels = {
@@ -343,8 +344,10 @@ class VerificationForm(forms.ModelForm):
             'qual_verification_note': 'Qualifications Rejection Reason',
             'cert_verification_status': 'Certifications Status',
             'cert_verification_note': 'Certifications Rejection Reason',
-            'pub_events_verification_status': 'Publications & Events Status',
-            'pub_events_verification_note': 'Publications & Events Rejection Reason',
+            'pub_verification_status': 'Publications Status',
+            'pub_verification_note': 'Publications Rejection Reason',
+            'events_verification_status': 'Events & Seminars Status',
+            'events_verification_note': 'Events & Seminars Rejection Reason',
             'overall_verification_status': 'Overall Profile Status',
             'overall_verification_note': 'Overall Rejection Reason',
         }
@@ -353,13 +356,15 @@ class VerificationForm(forms.ModelForm):
             'work_verification_status': forms.Select(attrs=WS),
             'qual_verification_status': forms.Select(attrs=WS),
             'cert_verification_status': forms.Select(attrs=WS),
-            'pub_events_verification_status': forms.Select(attrs=WS),
+            'pub_verification_status': forms.Select(attrs=WS),
+            'events_verification_status': forms.Select(attrs=WS),
             'overall_verification_status': forms.Select(attrs=WS),
             'bio_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
             'work_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
             'qual_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
             'cert_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
-            'pub_events_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'pub_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
+            'events_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
             'overall_verification_note': forms.Textarea(attrs={**W, 'rows': 2, 'placeholder': 'Reason for returning (shown to employee)'}),
         }
 

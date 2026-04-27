@@ -457,6 +457,20 @@
 
         /* =================== MISC =================== */
         .divider { height: 1px; background: #f1f5f9; margin: 8px 0; }
+
+        /* =================== FOOTER =================== */
+        .site-footer {
+            position: fixed; bottom: 0; left: var(--sidebar-width);
+            right: 0; height: 32px;
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(6px);
+            border-top: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: #94a3b8; z-index: 900;
+            transition: var(--transition);
+        }
+        .sidebar.collapsed ~ * .site-footer,
+        body.sidebar-collapsed .site-footer { left: var(--sidebar-collapsed-width); }
+        .main-content { padding-bottom: 48px; }
         .text-primary { color: var(--primary) !important; }
         .bg-primary { background-color: var(--primary) !important; }
         .border-primary { border-color: var(--primary) !important; }
@@ -559,12 +573,30 @@
                 </a>
             </div>
 
+            {% if user.is_admin or user.is_it_admin or user.is_superuser %}
+            <div class="nav-item">
+                <a href="#" class="nav-link submenu-toggle {% if request.resolver_match.app_name == 'inquiries' %}active{% endif %}" data-target="inquiries-menu">
+                    <span class="nav-icon"><i class="fas fa-question-circle"></i></span>
+                    <span class="nav-label">Inquiries</span>
+                    <span class="nav-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <div class="submenu {% if request.resolver_match.app_name == 'inquiries' %}open{% endif %}" id="inquiries-menu">
+                    <a href="{% url 'inquiries:list' %}" class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.app_name == 'inquiries' %}active{% endif %}">
+                        <span class="nav-label">All Inquiries</span>
+                    </a>
+                    <a href="{% url 'inquiries:category_list' %}" class="nav-link {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">
+                        <span class="nav-label">Categories</span>
+                    </a>
+                </div>
+            </div>
+            {% else %}
             <div class="nav-item">
                 <a href="{% url 'inquiries:list' %}" class="nav-link {% if request.resolver_match.app_name == 'inquiries' %}active{% endif %}">
                     <span class="nav-icon"><i class="fas fa-question-circle"></i></span>
                     <span class="nav-label">Inquiries</span>
                 </a>
             </div>
+            {% endif %}
 
             {% if user.is_admin or user.is_it_admin or user.is_superuser %}
             <div class="nav-item">
@@ -735,6 +767,12 @@
         </div>
     </header>
 
+    <!-- FIXED FOOTER -->
+    <footer class="site-footer" id="siteFooter">
+        <i class="fas fa-shield-alt me-2 text-primary" style="opacity:.5;"></i>
+        Track IT and Communication Cadres across government &nbsp;&mdash;&nbsp; V 1.0.0
+    </footer>
+
     <!-- MAIN CONTENT -->
     <main class="main-content fade-in" id="mainContent">
         <!-- Messages -->
@@ -772,24 +810,31 @@
         const mainContent = document.getElementById('mainContent');
         const topbar = document.getElementById('topbar');
 
+        const footer = document.getElementById('siteFooter');
+
+        function applySidebarState(collapsed) {
+            if (collapsed) {
+                mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
+                topbar.style.left = 'var(--sidebar-collapsed-width)';
+                if (footer) footer.style.left = 'var(--sidebar-collapsed-width)';
+            } else {
+                mainContent.style.marginLeft = 'var(--sidebar-width)';
+                topbar.style.left = 'var(--sidebar-width)';
+                if (footer) footer.style.left = 'var(--sidebar-width)';
+            }
+        }
+
         const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
         if (sidebarCollapsed) {
             sidebar.classList.add('collapsed');
-            mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
-            topbar.style.left = 'var(--sidebar-collapsed-width)';
+            applySidebarState(true);
         }
 
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
-            if (isCollapsed) {
-                mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
-                topbar.style.left = 'var(--sidebar-collapsed-width)';
-            } else {
-                mainContent.style.marginLeft = 'var(--sidebar-width)';
-                topbar.style.left = 'var(--sidebar-width)';
-            }
+            applySidebarState(isCollapsed);
         });
 
         // Auto-dismiss alerts after 5 seconds
